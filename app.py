@@ -122,10 +122,10 @@ class App:
 
     def zoom(self, signal):
         # AINDA PRECISA MELHORAR
-        self.topTransform += signal * self.canvas.winfo_height() * 0.1
-        self.bottomTransform -= signal * self.canvas.winfo_height() * 0.1
-        self.leftTransform += signal * self.canvas.winfo_width() * 0.1
-        self.rightTransform -= signal * self.canvas.winfo_width() * 0.1
+        self.topTransform += signal * self.canvas.winfo_height() * 0.1 /2
+        self.bottomTransform -= signal * self.canvas.winfo_height() * 0.1 /2
+        self.leftTransform -= signal * self.canvas.winfo_width() * 0.1
+        self.rightTransform += signal * self.canvas.winfo_width() * 0.1
         self.draw()
 
     def getViewportX(self, xw, xwmin, xwmax, xvpmin, xvpmax):
@@ -178,9 +178,8 @@ class App:
         self.add_object_screen.geometry("300x250")
         
         Label(self.add_object_screen, text="X").pack()
-        
 
-        newObject = Wireframe("test", [100, 20, 40, 50, 30, 10])
+        newObject = Wireframe("test", [100, 100, 100, 200, 200, 200, 200, 100])
         self.listbox.insert(END, newObject.name)
         self.objects.append(newObject)
         self.draw()
