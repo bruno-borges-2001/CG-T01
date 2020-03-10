@@ -6,7 +6,7 @@ class App:
     def __init__(self):
 
         self.root = Tk()
-        self.root.title = "teste"
+        self.root.title("Interface grafica para insercao de objetos")
 
         self.objects = []
 
@@ -16,7 +16,7 @@ class App:
         self.bottomTransform = 0
 
         self.root.geometry("1000x500")
-        self.root.state('zoomed')
+        self.root.state('normal')
 
         self.render()
 
@@ -27,6 +27,24 @@ class App:
     def render(self):
         self.function_container = Frame(self.root, background="red", width=30)
         self.function_container.pack(side=LEFT, fill=Y)
+        
+        self.header = Label(self.function_container, text="Funcoes", width=30)
+        self.header.pack(side=TOP)
+
+        self.listbox = Listbox(self.function_container, width=35)
+        self.listbox.pack(side=TOP)
+        
+        self.add_and_remove_container = Frame(self.function_container, background="red")
+        self.add_and_remove_container.pack(side=TOP, pady=20)
+        
+        self.up_container = Frame(self.function_container, background="red")
+        self.up_container.pack(side=TOP)
+        
+        self.directions_container = Frame(self.function_container, background="red")
+        self.directions_container.pack(side=TOP)
+        
+        self.zoom_container = Frame(self.function_container, background="red")
+        self.zoom_container.pack(side=TOP, pady=20)
 
         self.canvas_container = Frame(self.root, background="green")
         self.canvas_container.pack(fill=BOTH, expand=True)
@@ -34,37 +52,46 @@ class App:
         self.canvas = Canvas(self.canvas_container, background="white")
         self.canvas.pack(fill=BOTH, expand=True)
 
-        self.header = Label(self.function_container, text="Funções", width=30)
-        self.header.pack()
 
-        self.listbox = Listbox(self.function_container, width=35)
-        self.listbox.pack()
 
-        self.addButton = Button(self.function_container,
+
+
+        self.addButton = Button(self.add_and_remove_container,
                                 text="Adicionar Objeto", command=self.addObject)
         self.addButton.pack()
 
-        self.removeButton = Button(self.function_container,
+
+        self.removeButton = Button(self.add_and_remove_container,
                                    text="Remover Objeto", command=self.removeObject)
         self.removeButton.pack()
 
-        self.upButton = Button(self.function_container,
-                               text="Up", command=lambda: self.transform('u'))
-        self.upButton.pack()
-        self.leftButton = Button(self.function_container,
-                                 text="Left", command=lambda: self.transform('l'))
-        self.leftButton.pack()
-        self.downButton = Button(self.function_container,
-                                 text="Down", command=lambda: self.transform('d'))
-        self.downButton.pack()
-        self.rightButton = Button(self.function_container,
-                                  text="Right", command=lambda: self.transform('r'))
-        self.rightButton.pack()
 
-        self.zoomPlusButton = Button(self.function_container,
+        self.upButton = Button(self.up_container,
+                               text="↑", command=lambda: self.transform('u'))
+        self.upButton.pack(side=TOP)
+
+        
+        self.leftButton = Button(self.directions_container,
+                                 text="←", command=lambda: self.transform('l'))
+        self.leftButton.pack(side=LEFT)
+        
+        
+        self.downButton = Button(self.directions_container,
+                                 text="↓", command=lambda: self.transform('d'))
+        self.downButton.pack(side=LEFT)
+        
+        
+        self.rightButton = Button(self.directions_container,
+                                  text="→", command=lambda: self.transform('r'))
+        self.rightButton.pack(side=LEFT)
+
+
+        self.zoomPlusButton = Button(self.zoom_container,
                                      text="+", command=lambda: self.zoom(1))
         self.zoomPlusButton.pack()
-        self.zoomMinusButton = Button(self.function_container,
+
+        
+        self.zoomMinusButton = Button(self.zoom_container,
                                       text="-", command=lambda: self.zoom(-1))
         self.zoomMinusButton.pack()
 
@@ -144,7 +171,14 @@ class App:
         # ADICIONA O OBJETO NO VETOR DE OBJETOS
         # LIMPA A TELA E DESENHA TODOS OS VETORES DO OBJETO
 
-        # CRIEI SÓ A CLASSE WIREFRAME PQ NAO SABIA SE CLASSES PONTO E RETA ERAM NECESSARIOS
+        # CRIEI So A CLASSE WIREFRAME PQ NAO SABIA SE CLASSES PONTO E RETA ERAM NECESSARIOS
+        
+        self.add_object_screen = Toplevel(self.root)
+        self.add_object_screen.title("Adicionar objeto")
+        self.add_object_screen.geometry("300x250")
+        
+        Label(self.add_object_screen, text="X").pack()
+        
 
         newObject = Wireframe("test", [100, 20, 40, 50, 30, 10])
         self.listbox.insert(END, newObject.name)
