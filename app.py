@@ -14,6 +14,8 @@ class App:
         self.rightTransform = 0
         self.topTransform = 0
         self.bottomTransform = 0
+        
+        self.zoomSize = 0
 
         self.root.geometry("1000x500")
         self.root.state('normal')
@@ -100,30 +102,30 @@ class App:
         for i in self.objects:
             tranformedCoords = self.tranformCoords(
                 i.coords + i.coords[:2])
-            print(self.leftTransform, self.rightTransform,
+            print("Transform",self.leftTransform, self.rightTransform,
                   self.topTransform, self.bottomTransform,)
 
             self.canvas.create_line(tranformedCoords, tags=i.name)
 
     def transform(self, direction):
         if (direction == 'u'):
-            self.topTransform -= self.canvas.winfo_height() * 0.1
-            self.bottomTransform -= self.canvas.winfo_height() * 0.1
-        elif (direction == 'd'):
             self.topTransform += self.canvas.winfo_height() * 0.1
             self.bottomTransform += self.canvas.winfo_height() * 0.1
+        elif (direction == 'd'):
+            self.topTransform -= self.canvas.winfo_height() * 0.1
+            self.bottomTransform -= self.canvas.winfo_height() * 0.1
         elif (direction == 'l'):
-            self.leftTransform += self.canvas.winfo_width() * 0.1
-            self.rightTransform += self.canvas.winfo_width() * 0.1
-        elif (direction == 'r'):
             self.leftTransform -= self.canvas.winfo_width() * 0.1
             self.rightTransform -= self.canvas.winfo_width() * 0.1
+        elif (direction == 'r'):
+            self.leftTransform += self.canvas.winfo_width() * 0.1
+            self.rightTransform += self.canvas.winfo_width() * 0.1
         self.draw()
 
     def zoom(self, signal):
         # AINDA PRECISA MELHORAR
-        self.topTransform += signal * self.canvas.winfo_height() * 0.1 /2
-        self.bottomTransform -= signal * self.canvas.winfo_height() * 0.1 /2
+        self.topTransform -= signal * self.canvas.winfo_height() * 0.1
+        self.bottomTransform += signal * self.canvas.winfo_height() * 0.1
         self.leftTransform -= signal * self.canvas.winfo_width() * 0.1
         self.rightTransform += signal * self.canvas.winfo_width() * 0.1
         self.draw()
@@ -177,9 +179,20 @@ class App:
         self.add_object_screen.title("Adicionar objeto")
         self.add_object_screen.geometry("300x250")
         
+        amountOfPoints = 1
+        
+        
+        x = StringVar()
+        y = StringVar()
         Label(self.add_object_screen, text="X").pack()
+        Entry(self.add_object_screen, textvariable=x).pack()
+        Label(self.add_object_screen, text="Y").pack()
+        Entry(self.add_object_screen, textvariable=y).pack()
+        
+        Button(self.add_object_screen, text="Adicionar pontos", command=lambda: self.addPoints(amountOfPoints)).pack()
+        Button(self.add_object_screen, text="Adicionar objeto", command=lambda: self.addObjectOnScreen(points)).pack()
 
-        newObject = Wireframe("test", [100, 100, 100, 200, 200, 200, 200, 100])
+        newObject = Wireframe("test", [300, 300, 300, 400, 400, 400, 400, 300])
         self.listbox.insert(END, newObject.name)
         self.objects.append(newObject)
         self.draw()
