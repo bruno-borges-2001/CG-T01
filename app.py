@@ -9,6 +9,8 @@ class App:
         self.root.title("Interface grafica para insercao de objetos")
 
         self.objects = []
+        self.points = []
+        self.pointReaders = []
 
         self.leftTransform = 0
         self.rightTransform = 0
@@ -161,11 +163,6 @@ class App:
         return aux
 
     def addObject(self):
-        # DEVE ABRIR UM POP-UP PARA O USUARIO ADICIONAR AS FORMAS
-        # IDEIA: CRIAR 2 INPUTS PARA ADICIONAR X E Y DE UM PONTO E UM BOTAO ADICIONAR
-        # QUANDO CLICAR NO BOTAO, ADICIONAR A COORDENADA EM UM VETOR E LIMPAR O CAMPO
-        # O USUARIO PODE ADICIONAR QUANTOS PONTOS QUISER
-        # QUANDO ESTIVER SATISFEITO CLICAR EM UM BOTAO CRIAR QUE GERA O POLIGONO COMO ABAIXO
         # EX DE COORDENADAS => [X1, Y1, X2, Y2, X3, Y3, ..., Xn, Yn]
 
         # ESSE METODO INSTANCIA WIREFRAME COM NOME E COORDENADAS
@@ -173,33 +170,76 @@ class App:
         # ADICIONA O OBJETO NO VETOR DE OBJETOS
         # LIMPA A TELA E DESENHA TODOS OS VETORES DO OBJETO
 
-        # CRIEI So A CLASSE WIREFRAME PQ NAO SABIA SE CLASSES PONTO E RETA ERAM NECESSARIOS
         
         self.add_object_screen = Toplevel(self.root)
         self.add_object_screen.title("Adicionar objeto")
-        self.add_object_screen.geometry("300x250")
+        self.add_object_screen.geometry("300x600")
         
-        amountOfPoints = 1
+        self.nameObjectContainer = Frame(self.add_object_screen)
+        self.nameObjectContainer.pack(side=TOP)
         
+        self.objectName = StringVar()
+        Label(self.nameObjectContainer, text="Nome do objeto:").pack(side=LEFT)
+        Entry(self.nameObjectContainer, textvariable=self.objectName).pack(side=LEFT)
         
-        x = StringVar()
-        y = StringVar()
-        Label(self.add_object_screen, text="X").pack()
-        Entry(self.add_object_screen, textvariable=x).pack()
-        Label(self.add_object_screen, text="Y").pack()
-        Entry(self.add_object_screen, textvariable=y).pack()
+        self.buttonsContainer = Frame(self.add_object_screen)
+        self.buttonsContainer.pack(side=BOTTOM)
         
-        Button(self.add_object_screen, text="Adicionar pontos", command=lambda: self.addPoints(amountOfPoints)).pack()
-        Button(self.add_object_screen, text="Adicionar objeto", command=lambda: self.addObjectOnScreen(points)).pack()
+        self.pointNumber = 0
+        self.addPoints()
+        
+        Button(self.buttonsContainer, text="Adicionar pontos", command=self.addPoints).pack()
+        Button(self.buttonsContainer, text="Adicionar objeto", command=self.addObjectOnScreen).pack()
 
-        newObject = Wireframe("test", [300, 300, 300, 400, 400, 400, 400, 300])
-        self.listbox.insert(END, newObject.name)
-        self.objects.append(newObject)
-        self.draw()
 
     def removeObject(self):
         self.canvas.delete(self.listbox.get(self.listbox.curselection()))
         self.listbox.delete(self.listbox.curselection())
+        print(self.objects)
+        self.objects.pop(self.listbox.curselection()[0])
+        print(self.objects)
 
     def startApp(self):
         self.root.mainloop()
+
+
+    def addPoints(self):
+        self.pointNumber += 1
+        xName = "X" + str(self.pointNumber) + ":"
+        yName = "Y" + str(self.pointNumber) + ":"
+        entryContainer = Frame(self.add_object_screen)
+        entryContainer.pack(side=TOP, pady=5)
+        
+        entryXContainer = Frame(entryContainer)
+        entryXContainer.pack(side=TOP)
+        
+        entryYContainer = Frame(entryContainer)
+        entryYContainer.pack(side=TOP)
+        
+        x = IntVar()
+        y = IntVar()
+        self.pointReaders.append((x,y))
+        Label(entryXContainer, text=xName).pack(side=LEFT)
+        Entry(entryXContainer, textvariable=x).pack(side=LEFT)
+        Label(entryYContainer, text=yName).pack(side=LEFT)
+        Entry(entryYContainer, textvariable=y).pack(side=LEFT)
+        
+        
+    def addObjectOnScreen(self):
+        for point in self.pointReaders:
+            intX = point[0].get()
+            intY = point[1].get()
+            self.points.append(intX)
+            self.points.append(intY)
+        
+        print(self.points)
+        newObject = Wireframe(self.objectName.get(), self.points)
+        self.pointNumber = 0
+        self.points = []
+        self.pointReaders = []
+        self.listbox.insert(END, newObject.name)
+        self.objects.append(newObject)
+        self.draw()
+        self.add_object_screen.destroy()
+        
+            
