@@ -1,13 +1,17 @@
 from tkinter import *
-from classes import Wireframe
+from classes import GraphicObject
 
 
 class App:
     def __init__(self):
-
+        # WINDOW CONFIG
         self.root = Tk()
         self.root.title("Interface grafica para insercao de objetos")
+        self.root.geometry("1000x500")
+        self.root.state('normal')
 
+
+        # VARIABLE INITIALIZATION
         self.objects = []
         self.points = []
         self.pointReaders = []
@@ -20,18 +24,15 @@ class App:
         self.zoomHeight = 0
         self.zoomWidth = 0
 
-        self.root.geometry("1000x500")
-        self.root.state('normal')
 
+        # RENDER / UPDATE
         self.render()
-
         self.root.update_idletasks()
         self.canvas_container.update_idletasks()
         self.canvas.update_idletasks()
 
     def render(self):
-        self.function_container = Frame(
-            self.root, width=30)
+        self.function_container = Frame(self.root, width=30)
         self.function_container.pack(side=LEFT, fill=Y)
 
         self.header = Label(self.function_container, text="Funcoes", width=30)
@@ -236,7 +237,7 @@ class App:
                 self.points.append(intX)
                 self.points.append(intY)
 
-            newObject = Wireframe(self.objectName.get(), self.points)
+            newObject = GraphicObject(self.objectName.get(), self.points)
             self.pointNumber = 0
             self.points = []
             self.pointReaders = []
