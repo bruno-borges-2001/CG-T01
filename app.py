@@ -131,14 +131,19 @@ class App:
         self.draw()
 
     def zoom(self, signal):
-        self.zoomHeight += signal * self.canvas_container.winfo_height() * 0.05
-        self.zoomWidth += signal * self.canvas_container.winfo_width() * 0.05
-        self.log.insert(0, "zoomed in" if signal > 0 else "zoomed out")
+        self.topTransform += signal * self.canvas.winfo_height() * 0.1
+        self.bottomTransform -= signal * self.canvas.winfo_height() * 0.1
+        self.leftTransform += signal * self.canvas.winfo_width() * 0.1
+        self.rightTransform -= signal * self.canvas.winfo_width() * 0.1
+        
+        #self.zoomHeight += signal * self.canvas_container.winfo_height() * 0.05
+        #self.zoomWidth += signal * self.canvas_container.winfo_width() * 0.05
+        #self.log.insert(0, "zoomed in" if signal > 0 else "zoomed out")
         self.draw()
 
     def getViewportX(self, xw, xwmin, xwmax, xvpmin, xvpmax):
         print(xwmin, xwmax, xvpmin, xvpmax)
-        return (xw - xwmin) * (xwmax - xwmin) / (xvpmax - xvpmin)
+        return (xw - xwmin) * (xvpmax - xvpmin) / (xwmax - xwmin)
 
     def getViewportY(self, yw, ywmin, ywmax, yvpmin, yvpmax):
         print(ywmin, ywmax, yvpmin, yvpmax)
