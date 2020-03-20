@@ -78,19 +78,19 @@ class App:
         self.removeButton.pack(side=RIGHT)
 
         self.upButton = Button(self.up_container,
-                               text="↑", command=lambda: self.transform('up'))
+                               text="↑", command=lambda: self.moveWindow('up'))
         self.upButton.pack(side=TOP)
 
         self.leftButton = Button(self.directions_container,
-                                 text="←", command=lambda: self.transform('left'))
+                                 text="←", command=lambda: self.moveWindow('left'))
         self.leftButton.pack(side=LEFT)
 
         self.downButton = Button(self.directions_container,
-                                 text="↓", command=lambda: self.transform('down'))
+                                 text="↓", command=lambda: self.moveWindow('down'))
         self.downButton.pack(side=LEFT)
 
         self.rightButton = Button(self.directions_container,
-                                  text="→", command=lambda: self.transform('right'))
+                                  text="→", command=lambda: self.moveWindow('right'))
         self.rightButton.pack(side=LEFT)
 
         self.zoomPlusButton = Button(self.zoom_container,
@@ -115,7 +115,7 @@ class App:
                 self.canvas.create_oval(
                     tranformedCoords[0] - 1, tranformedCoords[1] - 1, tranformedCoords[0] + 1, tranformedCoords[1] + 1, fill="#000")
 
-    def transform(self, direction):
+    def moveWindow(self, direction):
         if (direction == 'up'):
             self.topTransform += self.canvas.winfo_height() * 0.1
             self.bottomTransform += self.canvas.winfo_height() * 0.1
@@ -128,7 +128,7 @@ class App:
         elif (direction == 'right'):
             self.leftTransform += self.canvas.winfo_width() * 0.1
             self.rightTransform += self.canvas.winfo_width() * 0.1
-        self.log.insert(0, "Transformed to " + direction)
+        self.log.insert(0, "Window moved " + direction)
         self.draw()
 
     def zoom(self, signal):
@@ -246,3 +246,12 @@ class App:
             self.objects.append(newObject)
             self.draw()
             self.add_object_screen.destroy()
+
+    def translateObject(self, translateX, translateY):
+        object = self.objects[self.listbox.curselection()[0]]
+        for i in range(len(object.coords)):  # ARRAY POS PAR = X / ARRAY POS IMPAR = Y
+            if (i % 2 == 0):
+                object.coords[i] += translateX
+            else:
+                object.coords[i] += translateY
+        
