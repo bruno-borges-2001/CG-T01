@@ -27,22 +27,22 @@ class App:
     def render(self):
         self.function_container = Frame(self.root, background="red", width=30)
         self.function_container.pack(side=LEFT, fill=Y)
-        
+
         self.header = Label(self.function_container, text="Funcoes", width=30)
         self.header.pack(side=TOP)
 
         self.listbox = Listbox(self.function_container, width=35)
         self.listbox.pack(side=TOP)
-        
+
         self.add_and_remove_container = Frame(self.function_container, background="red")
         self.add_and_remove_container.pack(side=TOP, pady=20)
-        
+
         self.up_container = Frame(self.function_container, background="red")
         self.up_container.pack(side=TOP)
-        
+
         self.directions_container = Frame(self.function_container, background="red")
         self.directions_container.pack(side=TOP)
-        
+
         self.zoom_container = Frame(self.function_container, background="red")
         self.zoom_container.pack(side=TOP, pady=20)
 
@@ -70,17 +70,17 @@ class App:
                                text="↑", command=lambda: self.transform('u'))
         self.upButton.pack(side=TOP)
 
-        
+
         self.leftButton = Button(self.directions_container,
                                  text="←", command=lambda: self.transform('l'))
         self.leftButton.pack(side=LEFT)
-        
-        
+
+
         self.downButton = Button(self.directions_container,
                                  text="↓", command=lambda: self.transform('d'))
         self.downButton.pack(side=LEFT)
-        
-        
+
+
         self.rightButton = Button(self.directions_container,
                                   text="→", command=lambda: self.transform('r'))
         self.rightButton.pack(side=LEFT)
@@ -90,7 +90,7 @@ class App:
                                      text="+", command=lambda: self.zoom(1))
         self.zoomPlusButton.pack()
 
-        
+
         self.zoomMinusButton = Button(self.zoom_container,
                                       text="-", command=lambda: self.zoom(-1))
         self.zoomMinusButton.pack()
@@ -172,13 +172,13 @@ class App:
         # LIMPA A TELA E DESENHA TODOS OS VETORES DO OBJETO
 
         # CRIEI So A CLASSE WIREFRAME PQ NAO SABIA SE CLASSES PONTO E RETA ERAM NECESSARIOS
-        
+
         self.add_object_screen = Toplevel(self.root)
         self.add_object_screen.title("Adicionar objeto")
         self.add_object_screen.geometry("300x250")
-        
+
         Label(self.add_object_screen, text="X").pack()
-        
+
 
         newObject = Wireframe("test", [100, 20, 40, 50, 30, 10])
         self.listbox.insert(END, newObject.name)
