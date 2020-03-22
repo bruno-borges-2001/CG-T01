@@ -1,5 +1,19 @@
 from tkinter import *
+from tkinter import ttk
 from classes import GraphicObject
+
+COLORS = {
+    "BLACK": "#000",
+    "RED": "#F00",
+    "GREEN": "#0F0",
+    "BLUE": "#00F",
+    "DARK RED": "#800",
+    "DARK GREEN": "#080",
+    "DARK BLUE": "#008",
+    "ORANGE": "#F80",
+    "LIGHT BLUE": "#08F",
+    "PINK": "#F08",
+}
 
 
 class App:
@@ -33,39 +47,37 @@ class App:
                 self.canvas.winfo_height() / 2)
 
     def render(self):
-        self.function_container = Frame(self.root, width=30)
-        self.function_container.pack(side=LEFT, fill=Y)
+        function_container = Frame(self.root, width=30)
+        function_container.pack(side=LEFT, fill=Y)
 
-        self.header = Label(self.function_container, text="Funcoes", width=30)
-        self.header.pack(side=TOP)
+        Label(function_container, text="Funcoes", width=30).pack(side=TOP)
 
-        self.listbox = Listbox(self.function_container, width=35)
+        self.listbox = Listbox(function_container, width=35)
         self.listbox.pack(side=TOP)
 
-        self.clearSelection = Button(self.function_container, width=29, text="Limpar", command=lambda: self.listbox.select_clear(0)
-                                     ).pack(side=TOP)
+        Button(function_container, width=29, text="Limpar", command=lambda: self.listbox.select_clear(0)
+               ).pack(side=TOP)
 
-        self.add_and_remove_container = Frame(
-            self.function_container)
-        self.add_and_remove_container.pack(side=TOP, pady=10)
+        add_and_remove_container = Frame(function_container)
+        add_and_remove_container.pack(side=TOP, pady=10)
 
-        Label(self.function_container, text="Window", width=30).pack(side=TOP)
+        Label(function_container,
+              text="Window / Objeto (selecione na listbox)", width=30).pack(side=TOP)
 
-        self.mainButtonContainer = Frame(self.function_container, width=35)
-        self.mainButtonContainer.pack(side=TOP)
+        mainButtonContainer = Frame(function_container, width=35)
+        mainButtonContainer.pack(side=TOP)
 
-        self.arrowsContainer = Frame(self.mainButtonContainer, padx=10)
-        self.arrowsContainer.pack(side=LEFT)
+        arrowsContainer = Frame(mainButtonContainer, padx=10)
+        arrowsContainer.pack(side=LEFT)
 
-        self.up_container = Frame(self.arrowsContainer)
-        self.up_container.pack(side=TOP)
+        up_container = Frame(arrowsContainer)
+        up_container.pack(side=TOP)
 
-        self.directions_container = Frame(
-            self.arrowsContainer)
-        self.directions_container.pack(side=TOP)
+        directions_container = Frame(arrowsContainer)
+        directions_container.pack(side=TOP)
 
-        self.zoom_container = Frame(self.mainButtonContainer)
-        self.zoom_container.pack(side=RIGHT, pady=10, padx=10)
+        zoom_container = Frame(mainButtonContainer)
+        zoom_container.pack(side=RIGHT, pady=10, padx=10)
 
         self.canvas_container = Frame(self.root)
         self.canvas_container.pack(fill=BOTH, expand=True)
@@ -73,39 +85,31 @@ class App:
         self.canvas = Canvas(self.canvas_container, background="white")
         self.canvas.pack(fill=BOTH, expand=True)
 
-        self.addButton = Button(self.add_and_remove_container,
-                                text="Adicionar Objeto", command=self.addObject)
-        self.addButton.pack(side=LEFT)
+        Button(add_and_remove_container,
+               text="Adicionar Objeto", command=self.addObject).pack(side=LEFT)
 
-        self.removeButton = Button(self.add_and_remove_container,
-                                   text="Remover Objeto", command=self.removeObject)
-        self.removeButton.pack(side=RIGHT)
+        Button(add_and_remove_container,
+               text="Remover Objeto", command=self.removeObject).pack(side=RIGHT)
 
-        self.upButton = Button(self.up_container,
-                               text="↑", command=lambda: self.handleTranslation('up'))
-        self.upButton.pack(side=TOP)
+        Button(up_container,
+               text="↑", command=lambda: self.handleTranslation('up')).pack(side=TOP)
 
-        self.leftButton = Button(self.directions_container,
-                                 text="←", command=lambda: self.handleTranslation('left'))
-        self.leftButton.pack(side=LEFT)
+        Button(directions_container,
+               text="←", command=lambda: self.handleTranslation('left')).pack(side=LEFT)
 
-        self.downButton = Button(self.directions_container,
-                                 text="↓", command=lambda: self.handleTranslation('down'))
-        self.downButton.pack(side=LEFT)
+        Button(directions_container,
+               text="↓", command=lambda: self.handleTranslation('down')).pack(side=LEFT)
 
-        self.rightButton = Button(self.directions_container,
-                                  text="→", command=lambda: self.handleTranslation('right'))
-        self.rightButton.pack(side=LEFT)
+        Button(directions_container,
+               text="→", command=lambda: self.handleTranslation('right')).pack(side=LEFT)
 
-        self.zoomPlusButton = Button(self.zoom_container,
-                                     text="+", command=lambda: self.zoom(1))
-        self.zoomPlusButton.pack()
+        Button(zoom_container,
+               text="+", command=lambda: self.zoom(1)).pack()
 
-        self.zoomMinusButton = Button(self.zoom_container,
-                                      text="-", command=lambda: self.zoom(-1))
-        self.zoomMinusButton.pack()
+        Button(zoom_container,
+               text="-", command=lambda: self.zoom(-1)).pack()
 
-        self.log = Listbox(self.function_container, width=35)
+        self.log = Listbox(function_container, width=35)
         self.log.pack(fill=Y, side=BOTTOM)
 
     def draw(self):
@@ -114,10 +118,11 @@ class App:
             tranformedCoords = self.tranformCoords(
                 (i.coords + i.coords[:2]) if (len(i.coords) > 4) else i.coords)
             if (len(i.coords) >= 4):
-                self.canvas.create_line(tranformedCoords, tags=i.name)
+                self.canvas.create_line(
+                    tranformedCoords, tags=i.name, fill=i.color)
             else:
                 self.canvas.create_oval(
-                    tranformedCoords[0] - 1, tranformedCoords[1] - 1, tranformedCoords[0] + 1, tranformedCoords[1] + 1, fill="#000")
+                    tranformedCoords[0] - 1, tranformedCoords[1] - 1, tranformedCoords[0] + 1, tranformedCoords[1] + 1, fill=i.color)
 
     def handleTranslation(self, direction):
         selected = self.listbox.curselection()
@@ -216,6 +221,17 @@ class App:
         Entry(self.nameObjectContainer,
               textvariable=self.objectName).pack(side=LEFT)
 
+        self.colorObjectContainer = Frame(
+            self.add_object_screen)
+        self.colorObjectContainer.pack(side=TOP)
+
+        Label(self.colorObjectContainer, text="Cor do objeto:").pack(side=LEFT)
+
+        self.colorCombobox = ttk.Combobox(
+            self.colorObjectContainer, values=list(COLORS.keys()))
+        self.colorCombobox.pack(side=LEFT)
+        self.colorCombobox.current(0)
+
         entryContainer = Frame(self.add_object_screen)
         entryContainer.pack(side=TOP, pady=5)
 
@@ -263,8 +279,9 @@ class App:
 
     def addObjectOnScreen(self):
         if (len(self.objectName.get()) > 0 and len(self.newObjectCoords) > 0):
+            print(self.newObjectCoords)
             newObject = GraphicObject(
-                self.objectName.get(), self.newObjectCoords)
+                self.objectName.get(), self.newObjectCoords, COLORS[self.colorCombobox.get()])
             self.listbox.insert(END, newObject.name)
             self.log.insert(0, "Objected " + newObject.name + " added")
             self.objects.append(newObject)
