@@ -1,3 +1,6 @@
+from math import *
+
+
 class GraphicObject:
 
     def __init__(self, name, coords, color):
@@ -5,9 +8,9 @@ class GraphicObject:
         self.coords = coords
         self.color = color
 
-        self.centerX = 0
-        self.centerY = 0
-        self.getCenter()
+        self.center_x = 0
+        self.center_y = 0
+        self.get_center()
 
     def translate(self, Cx, Cy):
         for i in range(len(self.coords)):
@@ -23,18 +26,53 @@ class GraphicObject:
             else:
                 self.coords[i] *= Sy
 
-    def centerScale(self, Sx, Sy):
-        self.translate(-self.centerX, -self.centerY)
-        self.scale(Sx, Sy)
-        self.translate(self.centerX, self.centerY)
+    def center_scale(self, Sx, Sy):
+        self.get_center()
+        for i in range(len(self.coords)):
+            if i % 2 == 0:
+                self.coords[i] = self.coords[i] * Sx - self.center_x * (Sx - 1)
+            else:
+                self.coords[i] = self.coords[i] * Sy - self.center_y * (Sy - 1)
 
-    def getCenter(self):
+        # self.translate(-self.centerX, -self.centerY)
+        # self.scale(Sx, Sy)
+        # self.translate(self.centerX, self.centerY)
+
+    def rotate(self, Dx, Dy, teta):
+        print(Dx, Dy)
+        self.translate(-Dx, -Dy)
+        # ROTATE
+        angle = (360 - teta) * (pi/180)
+        coseno = round(cos(angle), 5)
+        seno = round(sin(angle), 5)
+        print(teta, angle, seno, coseno)
+        aux = [0] * len(self.coords)
+        for i in range(len(self.coords)):
+            if i % 2 == 0:
+                x = self.coords[i]
+                y = self.coords[i+1]
+                aux[i] = x * coseno + y * seno
+            else:
+                x = self.coords[i-1]
+                y = self.coords[i]
+                aux[i] = - x * seno + y * coseno
+        self.coords = aux
+        self.translate(Dx, Dy)
+
+    def get_center(self):
+        center_x = 0
+        center_y = 0
+
         for i in range(len(self.coords)):  # ARRAY POS PAR = X / ARRAY POS IMPAR = Y
             coord = self.coords[i]
             if (i % 2 == 0):
-                self.centerX += coord
+                center_x += coord
             else:
-                self.centerY += coord
+                center_y += coord
 
-        self.centerX = self.centerX / (len(self.coords) / 2)
-        self.centerY = self.centerY / (len(self.coords) / 2)
+        self.center_x = center_x / (len(self.coords) / 2)
+        self.center_y = center_y / (len(self.coords) / 2)
+
+    def return_center(self):
+        self.get_center()
+        return (self.center_x, self.center_y)
