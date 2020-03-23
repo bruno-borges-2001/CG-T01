@@ -47,9 +47,6 @@ class Popup:
         submit_button.pack(side=BOTTOM, pady=5)
 
     def render_coords(self):
-
-        print(self.option, self.rotation_type.get())
-
         if (self.container and self.option == "Rotação"):
             self.container.destroy()
 

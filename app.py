@@ -54,8 +54,6 @@ class App:
         Label(function_container, text="Funcoes", width=30).pack(side=TOP)
 
         self.listbox = Listbox(function_container, width=35, selectmode=SINGLE)
-        self.listbox.bind("<<ListboxSelect>>",
-                          self.update_selection)
         self.listbox.pack(side=TOP)
 
         Button(function_container, width=29, text="Limpar", command=self.handle_clear_selection
@@ -126,12 +124,6 @@ class App:
 
     def handle_clear_selection(self):
         self.listbox.select_clear(0)
-
-    def update_selection(self, event):
-        self.disabled = DISABLED if len(
-            self.listbox.curselection()) == 0 else NORMAL
-        print(self.disabled, event)
-        self.root.update()
 
     def draw(self):
         self.canvas.delete("all")
@@ -315,7 +307,6 @@ class App:
                 self.root, action, selection[0], lambda item, values: self.handle_submit(item, action, values))
 
     def handle_submit(self, item, action, values):
-        print(item, action, values)
         if action == "Translação":
             self.objects[item].translate(*values[:2])
         elif action == "Rotação":
@@ -341,4 +332,3 @@ class App:
             self.objects.append(new_object)
             self.draw()
             self.add_object_screen.destroy()
-

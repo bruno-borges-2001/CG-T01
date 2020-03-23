@@ -39,25 +39,21 @@ class GraphicObject:
         # self.translate(self.centerX, self.centerY)
 
     def rotate(self, Dx, Dy, teta):
-        print(Dx, Dy)
-        self.translate(-Dx, -Dy)
         # ROTATE
         angle = (360 - teta) * (pi/180)
         coseno = round(cos(angle), 5)
         seno = round(sin(angle), 5)
-        print(teta, angle, seno, coseno)
         aux = [0] * len(self.coords)
         for i in range(len(self.coords)):
             if i % 2 == 0:
                 x = self.coords[i]
                 y = self.coords[i+1]
-                aux[i] = x * coseno + y * seno
+                aux[i] = (x - Dx) * coseno + (y - Dy) * seno + Dx
             else:
                 x = self.coords[i-1]
                 y = self.coords[i]
-                aux[i] = - x * seno + y * coseno
+                aux[i] = (- x + Dx) * seno + (y - Dy) * coseno + Dy
         self.coords = aux
-        self.translate(Dx, Dy)
 
     def get_center(self):
         center_x = 0
