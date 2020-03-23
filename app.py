@@ -65,7 +65,7 @@ class App:
         add_and_remove_container.pack(side=TOP, pady=10)
 
         Label(function_container,
-              text="Window / Objeto (selecione na listbox)", width=30).pack(side=TOP)
+              text="Window/Objeto (selecione na listbox)", width=30).pack(side=TOP)
 
         main_button_container = Frame(function_container, width=35)
         main_button_container.pack(side=TOP)
@@ -342,10 +342,3 @@ class App:
             self.draw()
             self.add_object_screen.destroy()
 
-    # def translateObject(self, translateX, translateY):
-    #     object = self.objects[self.listbox.curselection()[0]]
-    #     for i in range(len(object.coords)):  # ARRAY POS PAR = X / ARRAY POS IMPAR = Y
-    #         if (i % 2 == 0):
-    #             object.coords[i] += translateX
-    #         else:
-    #             object.coords[i] += translateY
