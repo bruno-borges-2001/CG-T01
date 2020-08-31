@@ -26,8 +26,7 @@ class App:
         self.root.state('normal')
 
         # VARIABLE INITIALIZATION
-        self.objects = []
-        self.points = []
+        self.display_file = []
 
         self.left_transform = 0
         self.right_transform = 0
@@ -123,19 +122,19 @@ class App:
         self.log.pack(fill=Y, side=BOTTOM)
 
     def handle_clear_selection(self):
-        self.listbox.select_clear(0)
+        self.listbox.select_clear(0, END)
 
     def draw(self):
         self.canvas.delete("all")
-        for i in self.objects:
+        for obj in self.display_file:
             tranformed_coords = self.tranform_coords(
-                (i.coords + i.coords[:2]) if (len(i.coords) > 4) else i.coords)
-            if (len(i.coords) >= 4):
+                (obj.coords + obj.coords[:2]) if (len(obj.coords) > 4) else obj.coords)
+            if (len(obj.coords) >= 4):
                 self.canvas.create_line(
-                    tranformed_coords, tags=i.name, fill=i.color)
+                    tranformed_coords, tags=obj.name, fill=obj.color)
             else:
                 self.canvas.create_oval(
-                    tranformed_coords[0] - 1, tranformed_coords[1] - 1, tranformed_coords[0] + 1, tranformed_coords[1] + 1, fill=i.color)
+                    tranformed_coords[0] - 1, tranformed_coords[1] - 1, tranformed_coords[0] + 1, tranformed_coords[1] + 1, fill=obj.color)
 
     def handle_translation(self, direction):
         selected = self.listbox.curselection()
@@ -143,8 +142,8 @@ class App:
             values = self.get_translate_values(direction)
             for item in selected:
                 self.log.insert(
-                    0, "Object " + self.objects[item].name + " moved " + direction)
-                self.objects[item].translate(*values)
+                    0, "Object " + self.display_file[item].name + " moved " + direction)
+                self.display_file[item].translate(*values)
             self.draw()
         else:
             self.move_window(direction)
@@ -155,8 +154,8 @@ class App:
             zoom = 1.1 if signal > 0 else 0.9
             for item in selected:
                 self.log.insert(
-                    0, "Object " + self.objects[item].name + " zoomed " + ("in" if signal > 0 else "out"))
-                self.objects[item].center_scale(zoom, zoom)
+                    0, "Object " + self.display_file[item].name + " zoomed " + ("in" if signal > 0 else "out"))
+                self.display_file[item].center_scale(zoom, zoom)
             self.draw()
         else:
             self.zoom(signal)
@@ -286,7 +285,7 @@ class App:
         self.log.insert(
             0, "Object " + self.listbox.get(self.listbox.curselection()) + " removed")
         self.canvas.delete(self.listbox.get(self.listbox.curselection()))
-        self.objects.pop(self.listbox.curselection()[0])
+        self.display_file.pop(self.listbox.curselection()[0])
         self.listbox.delete(self.listbox.curselection())
 
     def start_app(self):
@@ -308,18 +307,18 @@ class App:
 
     def handle_submit(self, item, action, values):
         if action == "Translação":
-            self.objects[item].translate(*values[:2])
+            self.display_file[item].translate(*values[:2])
         elif action == "Rotação":
             origin = (0, 0)
             if values[3] == 2:
-                origin = self.objects[item].return_center()
+                origin = self.display_file[item].return_center()
             elif values[3] == 3:
                 origin = values[:2]
 
             angle = values[2]
-            self.objects[item].rotate(*origin, angle)
+            self.display_file[item].rotate(*origin, angle)
         elif action == "Escala":
-            self.objects[item].center_scale(*values[:2])
+            self.display_file[item].center_scale(*values[:2])
         self.popup.destroy()
         self.draw()
 
@@ -329,6 +328,6 @@ class App:
                 self.object_name.get(), self.new_object_coords, COLORS[self.color_combobox.get()])
             self.listbox.insert(END, new_object.name)
             self.log.insert(0, "Objected " + new_object.name + " added")
-            self.objects.append(new_object)
+            self.display_file.append(new_object)
             self.draw()
             self.add_object_screen.destroy()
