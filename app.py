@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter import ttk
-from classes import GraphicObject
+from classes import GraphicObject, Coords
 from popup import Popup
 
 COLORS = {
@@ -27,6 +27,9 @@ class App:
 
         # VARIABLE INITIALIZATION
         self.display_file = []
+        self.display_file_normalized = []
+
+        self.display_file_show = []
 
         self.left_transform = 0
         self.right_transform = 0
@@ -36,6 +39,9 @@ class App:
         self.zoom_height = 0
         self.zoom_width = 0
 
+        self.height = 0
+        self.width = 0
+
         # RENDER / UPDATE
         self.render()
         self.root.update_idletasks()
@@ -43,8 +49,8 @@ class App:
         self.canvas.update_idletasks()
 
     def get_canvas_center(self):
-        return (self.canvas.winfo_width() / 2,
-                self.canvas.winfo_height() / 2)
+        return Coords(self.width / 2,
+                      self.height / 2)
 
     def render(self):
         function_container = Frame(self.root, width=30)
@@ -94,6 +100,8 @@ class App:
         self.canvas = Canvas(self.canvas_container, background="white")
         self.canvas.pack(fill=BOTH, expand=True)
 
+        self.canvas.bind("<Configure>", self.check)
+
         Button(add_and_remove_container,
                text="Adicionar Objeto", command=self.add_object).pack(side=LEFT)
 
@@ -124,17 +132,31 @@ class App:
     def handle_clear_selection(self):
         self.listbox.select_clear(0, END)
 
+    def check(self, event):
+        print(event)
+        self.height = self.canvas.winfo_height()
+        self.width = self.canvas.winfo_width()
+
     def draw(self):
+        for i in range(len(self.display_file)):
+            self.update_display_file(i, self.display_file[i].coords)
+
         self.canvas.delete("all")
-        for obj in self.display_file:
-            tranformed_coords = self.tranform_coords(
-                (obj.coords + obj.coords[:2]) if (len(obj.coords) > 4) else obj.coords)
-            if (len(obj.coords) >= 4):
-                self.canvas.create_line(
-                    tranformed_coords, tags=obj.name, fill=obj.color)
+        for obj in self.display_file_show:
+            if (len(obj.coords) >= 2):
+                coords = []
+                for coord in obj.coords:
+                    coords += [coord.x, coord.y]
+                coords += [obj.coords[0].x, obj.coords[0].y]
+                self.canvas.create_line(coords, tags=obj.name, fill=obj.color)
             else:
                 self.canvas.create_oval(
-                    tranformed_coords[0] - 1, tranformed_coords[1] - 1, tranformed_coords[0] + 1, tranformed_coords[1] + 1, fill=obj.color)
+                    obj.coords[0].x - 1, obj.coords[0].y - 1, obj.coords[0].x + 1, obj.coords[0].y + 1, fill=obj.color)
+
+    def update_display_file(self, index, coords):
+        self.display_file_normalized[index].coords = self.tranform_coords(
+            coords)
+        self.display_file_show = self.display_file_normalized
 
     def handle_translation(self, direction):
         selected = self.listbox.curselection()
@@ -161,8 +183,8 @@ class App:
             self.zoom(signal)
 
     def get_translate_values(self, direction):
-        vertical = self.canvas.winfo_height() * 0.1
-        horizontal = self.canvas.winfo_height() * 0.1
+        vertical = self.height * 0.1
+        horizontal = self.width * 0.1
         if (direction == 'up'):
             return (0, vertical)
         elif (direction == 'down'):
@@ -174,28 +196,23 @@ class App:
 
     def move_window(self, direction):
         if (direction == 'up'):
-            self.top_transform += self.canvas.winfo_height() * 0.1
-            self.bottom_transform += self.canvas.winfo_height() * 0.1
+            self.top_transform += self.height * 0.1
+            self.bottom_transform += self.height * 0.1
         elif (direction == 'down'):
-            self.top_transform -= self.canvas.winfo_height() * 0.1
-            self.bottom_transform -= self.canvas.winfo_height() * 0.1
+            self.top_transform -= self.height * 0.1
+            self.bottom_transform -= self.height * 0.1
         elif (direction == 'left'):
-            self.left_transform -= self.canvas.winfo_width() * 0.1
-            self.right_transform -= self.canvas.winfo_width() * 0.1
+            self.left_transform -= self.width * 0.1
+            self.right_transform -= self.width * 0.1
         elif (direction == 'right'):
-            self.left_transform += self.canvas.winfo_width() * 0.1
-            self.right_transform += self.canvas.winfo_width() * 0.1
+            self.left_transform += self.width * 0.1
+            self.right_transform += self.width * 0.1
         self.log.insert(0, "Window moved " + direction)
         self.draw()
 
     def zoom(self, signal):
-        # self.top_transform += signal * self.canvas.winfo_height() * 0.1
-        # self.bottom_transform -= signal * self.canvas.winfo_height() * 0.1
-        # self.left_transform += signal * self.canvas.winfo_width() * 0.1
-        # self.right_transform -= signal * self.canvas.winfo_width() * 0.1
-
-        self.zoom_height += signal * self.canvas_container.winfo_height() * 0.05
-        self.zoom_width += signal * self.canvas_container.winfo_width() * 0.05
+        self.zoom_height += signal * self.height * 0.05
+        self.zoom_width += signal * self.width * 0.05
         self.log.insert(0, "zoomed in" if signal > 0 else "zoomed out")
         self.draw()
 
@@ -205,30 +222,36 @@ class App:
     def get_viewport_y(self, yw, ywmin, ywmax, yvpmin, yvpmax):
         return (1 - ((yw - ywmin) / (ywmax - ywmin))) * (yvpmax - yvpmin)
 
+    def get_viewport_coords(self, wcoords, min_wcoords, max_wcoords, min_vpcoords, max_vpcoords):
+        x = (wcoords.x - min_wcoords.x) * (max_vpcoords.x -
+                                           min_vpcoords.x) / (max_wcoords.x - min_wcoords.x)
+        y = (1 - (wcoords.y - min_wcoords.y) / (max_wcoords.y -
+                                                min_wcoords.y)) * (max_vpcoords.y - min_vpcoords.y)
+        return Coords(x, y)
+
     def tranform_coords(self, coords):
         aux = []
         XVMIN = 0 - self.zoom_width
         YVMIN = 0 - self.zoom_height
-        XVMAX = self.canvas_container.winfo_width() + self.zoom_width
-        YVMAX = self.canvas_container.winfo_height() + self.zoom_height
+        XVMAX = self.width + self.zoom_width
+        YVMAX = self.height + self.zoom_height
 
         XWMIN = 0 + self.left_transform
         YWMIN = 0 + self.top_transform
-        XWMAX = self.canvas_container.winfo_width() + self.right_transform
-        YWMAX = self.canvas_container.winfo_height() + self.bottom_transform
+        XWMAX = self.width + self.right_transform
+        YWMAX = self.height + self.bottom_transform
 
-        for i in range(len(coords)):  # ARRAY POS PAR = X / ARRAY POS IMPAR = Y
-            coord = coords[i]
-            if (i % 2 == 0):
-                aux.append(self.get_viewport_x(
-                    coord, XWMIN, XWMAX, XVMIN, XVMAX))
-            else:
-                aux.append(self.get_viewport_y(
-                    coord, YWMIN, YWMAX, YVMIN, YVMAX))
+        min_wcoords = Coords(XWMIN, YWMIN)
+        max_wcoords = Coords(XWMAX, YWMAX)
+        min_vpcoords = Coords(XVMIN, YVMIN)
+        max_vpcoords = Coords(XVMAX, YVMAX)
+
+        for coord in coords:  # ARRAY POS PAR = X / ARRAY POS IMPAR = Y
+            aux.append(self.get_viewport_coords(
+                coord, min_wcoords, max_wcoords, min_vpcoords, max_vpcoords))
         return aux
 
     def add_object(self):
-        # EX DE COORDENADAS => [X1, Y1, X2, Y2, X3, Y3, ..., Xn, Yn]
         self.new_object_coords = []
 
         self.add_object_screen = Toplevel(self.root)
@@ -294,7 +317,7 @@ class App:
     def add_point(self):
         x = self.point_x.get()
         y = self.point_y.get()
-        self.new_object_coords += [x, y]
+        self.new_object_coords.append(Coords(x, y))
         self.new_object_listbox.insert(END, "(" + str(x) + "," + str(y) + ")")
         self.point_x.set(0)
         self.point_y.set(0)
@@ -309,14 +332,13 @@ class App:
         if action == "Translação":
             self.display_file[item].translate(*values[:2])
         elif action == "Rotação":
-            origin = (0, 0)
+            origin = Coords(0, 0)
             if values[3] == 2:
                 origin = self.display_file[item].return_center()
             elif values[3] == 3:
-                origin = values[:2]
-
+                origin = Coords(values[:2])
             angle = values[2]
-            self.display_file[item].rotate(*origin, angle)
+            self.display_file[item].rotate(origin.x, origin.y, angle)
         elif action == "Escala":
             self.display_file[item].center_scale(*values[:2])
         self.popup.destroy()
@@ -329,5 +351,8 @@ class App:
             self.listbox.insert(END, new_object.name)
             self.log.insert(0, "Objected " + new_object.name + " added")
             self.display_file.append(new_object)
+            self.display_file_normalized.append(GraphicObject(
+                self.object_name.get(), self.tranform_coords(self.new_object_coords), COLORS[self.color_combobox.get()]))
+            self.display_file_show = self.display_file_normalized
             self.draw()
             self.add_object_screen.destroy()

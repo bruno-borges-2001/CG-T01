@@ -1,74 +1,134 @@
 from math import *
 
 
+class Coords:
+
+    def __init__(self, x, y, z=None):
+        self.x = x
+        self.y = y
+        if not z:
+            self.z = 1
+        else:
+            self.z = z
+
+    def to_list(self):
+        return [self.x, self.y, self.z]
+
+    def __str__(self):
+        return "(" + str(self.x) + "," + str(self.y) + "," + str(self.z) + ")"
+
+
+class Matrix:
+
+    def __init__(self, height, width, values=None):
+        self.height = height
+        self.width = width
+        if not values:
+            self.createEmptyMatrix()
+        else:
+            self.matrix = values
+
+    def createEmptyMatrix(self):
+        self.matrix = [[0 for j in range(self.width)]
+                       for i in range(self.height)]
+
+    def __add__(self, other):
+        if (self.height != other.height or self.width != other.width):
+            return False
+        result = Matrix(self.height, self.width)
+        for i in range(self.height):
+            for j in range(self.width):
+                result.matrix[i][j] = self.matrix[i][j] + other.matrix[i][j]
+        return result
+
+    def __mul__(self, other):
+        if (self.width != other.height):
+            return False
+        result = Matrix(self.height, other.width)
+        for i in range(self.height):
+            for j in range(other.width):
+                for k in range(other.height):
+                    result.matrix[i][j] += self.matrix[i][k] * \
+                        other.matrix[k][j]
+        return result
+
+
+class CalculationMatrix(Matrix):
+
+    def __init__(self, module, values):
+        if module == 'c':
+            super().__init__(1, 3, [values])
+        elif module == 't':
+            super().__init__(
+                3, 3, [[1, 0, 0], [0, 1, 0], [values[0], values[1], 0]])
+        elif module == 's':
+            super().__init__(
+                3, 3, [[values[0], 0, 0], [0, values[1], 0], [0, 0, 1]])
+        elif module == 'r':
+            angle = (360 - values) * (pi/180)
+            coseno = round(cos(angle), 5)
+            seno = round(sin(angle), 5)
+            super().__init__(
+                3, 3, [[coseno, -seno, 0], [seno, coseno, 0], [0, 0, 1]])
+
+
 class GraphicObject:
 
     def __init__(self, name, coords, color):
         self.name = name
         self.coords = coords
         self.color = color
-
-        self.center_x = 0
-        self.center_y = 0
         self.get_center()
 
     def translate(self, Cx, Cy):
-        for i in range(len(self.coords)):
-            if i % 2 == 0:
-                self.coords[i] += Cx
-            else:
-                self.coords[i] += Cy
+        aux = []
+        for coord in self.coords:
+            result = CalculationMatrix('c', coord.to_list()) * \
+                CalculationMatrix('t', [Cx, Cy])
+            aux.append(Coords(*result.matrix[0]))
+        self.coords = aux
+        print(list(map(str, self.coords)))
 
     def scale(self, Sx, Sy):
-        for i in range(len(self.coords)):
-            if i % 2 == 0:
-                self.coords[i] *= Sx
-            else:
-                self.coords[i] *= Sy
+        aux = []
+        for coord in self.coords:
+            result = CalculationMatrix('c', coord.to_list()) * \
+                CalculationMatrix('s', [Sx, Sy])
+            aux.append(Coords(*result.matrix[0]))
+        self.coords = aux
+        print(list(map(str, self.coords)))
 
     def center_scale(self, Sx, Sy):
         self.get_center()
-        for i in range(len(self.coords)):
-            if i % 2 == 0:
-                self.coords[i] = self.coords[i] * Sx - self.center_x * (Sx - 1)
-            else:
-                self.coords[i] = self.coords[i] * Sy - self.center_y * (Sy - 1)
 
-        # self.translate(-self.centerX, -self.centerY)
-        # self.scale(Sx, Sy)
-        # self.translate(self.centerX, self.centerY)
+        self.translate(-self.center.x, -self.center.y)
+        self.scale(Sx, Sy)
+        self.translate(self.center.x, self.center.y)
 
     def rotate(self, Dx, Dy, teta):
-        # ROTATE
-        angle = (360 - teta) * (pi/180)
-        coseno = round(cos(angle), 5)
-        seno = round(sin(angle), 5)
-        aux = [0] * len(self.coords)
-        for i in range(len(self.coords)):
-            if i % 2 == 0:
-                x = self.coords[i]
-                y = self.coords[i+1]
-                aux[i] = (x - Dx) * coseno + (y - Dy) * seno + Dx
-            else:
-                x = self.coords[i-1]
-                y = self.coords[i]
-                aux[i] = (- x + Dx) * seno + (y - Dy) * coseno + Dy
+        self.translate(-Dx, -Dy)
+
+        aux = []
+        for coord in self.coords:
+            result = CalculationMatrix('c', coord.to_list()) * \
+                CalculationMatrix('r', teta)
+            aux.append(Coords(*result.matrix[0]))
         self.coords = aux
+
+        self.translate(Dx, Dy)
+        print(list(map(str, self.coords)))
 
     def get_center(self):
         center_x = 0
         center_y = 0
 
-        for i in range(len(self.coords)):  # ARRAY POS PAR = X / ARRAY POS IMPAR = Y
-            coord = self.coords[i]
-            if (i % 2 == 0):
-                center_x += coord
-            else:
-                center_y += coord
+        for coord in self.coords:  # ARRAY POS PAR = X / ARRAY POS IMPAR = Y
+            center_x += coord.x
+            center_y += coord.y
 
-        self.center_x = center_x / (len(self.coords) / 2)
-        self.center_y = center_y / (len(self.coords) / 2)
+        self.center = Coords(center_x / (len(self.coords)),
+                             center_y / (len(self.coords)))
 
     def return_center(self):
         self.get_center()
-        return (self.center_x, self.center_y)
+        return self.center
