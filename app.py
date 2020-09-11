@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 from tkinter import *
 from tkinter import ttk
-from classes import GraphicObject, Coords
+from classes import GraphicObject, Coords, Matrix, CalculationMatrix
 from popup import Popup
+from copy import deepcopy
 
 COLORS = {
     "BLACK": "#000",
@@ -21,13 +24,14 @@ class App:
     def __init__(self):
         # WINDOW CONFIG
         self.root = Tk()
-        self.root.title("Interface grafica para insercao de objetos")
-        self.root.geometry("1000x500")
+        self.root.title("SGI - Interface grafica para insercao de objetos")
+        self.root.geometry("1000x600")
         self.root.state('normal')
 
         # VARIABLE INITIALIZATION
         self.display_file = []
         self.display_file_normalized = []
+        self.display_file_rotation = []
 
         self.display_file_show = []
 
@@ -86,13 +90,10 @@ class App:
         zoom_container.pack(side=RIGHT, pady=10, padx=10)
 
         object_actions_container = Frame(function_container)
-        Button(object_actions_container,
-               text="Translação", command=lambda: self.handle_action_click("Translação")).pack(side=LEFT)
-        Button(object_actions_container,
-               text="Rotação", command=lambda: self.handle_action_click("Rotação")).pack(side=LEFT)
-        Button(object_actions_container,
-               text="Escala", command=lambda: self.handle_action_click("Escala")).pack(side=LEFT)
         object_actions_container.pack(side=TOP)
+
+        rotation_container = Frame(function_container)
+        rotation_container.pack(side=TOP, pady=10)
 
         self.canvas_container = Frame(self.root)
         self.canvas_container.pack(fill=BOTH, expand=True)
@@ -126,6 +127,21 @@ class App:
         Button(zoom_container,
                text="-", command=lambda: self.handle_zoom(-1)).pack()
 
+        Button(object_actions_container,
+               text="Translação", command=lambda: self.handle_action_click("Translação")).pack(side=LEFT)
+
+        Button(object_actions_container,
+               text="Rotação", command=lambda: self.handle_action_click("Rotação")).pack(side=LEFT)
+
+        Button(object_actions_container,
+               text="Escala", command=lambda: self.handle_action_click("Escala")).pack(side=LEFT)
+
+        Button(rotation_container,
+               text="↶", command=lambda: self.handle_window_rotation('left')).pack(side=LEFT)
+
+        Button(rotation_container,
+               text="↷", command=lambda: self.handle_window_rotation('right')).pack(side=LEFT)
+
         self.log = Listbox(function_container, width=35)
         self.log.pack(fill=Y, side=BOTTOM)
 
@@ -137,10 +153,10 @@ class App:
         self.height = self.canvas.winfo_height()
         self.width = self.canvas.winfo_width()
 
-    def draw(self):
-        for i in range(len(self.display_file)):
-            self.update_display_file(i, self.display_file[i].coords)
-
+    def draw(self, mode = None):
+        if not mode:
+            for i in range(len(self.display_file)):
+                self.update_display_file(i, self.display_file[i].coords)
         self.canvas.delete("all")
         for obj in self.display_file_show:
             if (len(obj.coords) >= 2):
@@ -169,6 +185,44 @@ class App:
             self.draw()
         else:
             self.move_window(direction)
+
+    def handle_window_rotation(self, direction):
+        self.display_file_rotation = []
+        scn_matrix = self.generate_scn_matrix(direction)
+        graphic_objects = deepcopy(self.display_file)
+        for graphic_object in graphic_objects:
+            aux = []
+            for coord in graphic_object.coords:
+                result = CalculationMatrix('c', coord.to_list()) * scn_matrix
+                aux.append(Coords(*result.matrix[0]))
+            graphic_object.coords = aux
+            self.display_file_rotation.append(graphic_object)
+        for i in range(len(self.display_file_rotation)):
+            self.update_display_file(i, self.display_file_rotation[i].coords)
+        self.log.insert(0, "Window rotated " + direction)
+        self.draw('rotation')
+        
+
+    def generate_scn_matrix(self, direction):
+        canvas_center = self.get_canvas_center()
+
+        angle = 0
+        rotation_angle = 10
+        if (direction == 'left' ):
+            angle = 360 - rotation_angle
+        else:
+            angle = rotation_angle
+        
+        translation_matrix = CalculationMatrix('t', [-(canvas_center.x), -(canvas_center.y)])
+        
+        rotation_matrix = CalculationMatrix('r', angle)
+
+        scale_matrix = CalculationMatrix('s',[1/(self.width / 2), 1/(self.height / 2)])
+
+        scn_matrix = translation_matrix * rotation_matrix * scale_matrix
+
+        return scn_matrix
+
 
     def handle_zoom(self, signal):
         selected = self.listbox.curselection()
