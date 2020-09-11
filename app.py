@@ -31,9 +31,17 @@ class App:
         # VARIABLE INITIALIZATION
         self.display_file = []
         self.display_file_normalized = []
-        self.display_file_rotation = []
-
         self.display_file_show = []
+
+        self.XWMIN = 0
+        self.YWMIN = 0
+        self.XWMAX = 0
+        self.YWMAX = 0
+
+        self.window = GraphicObject("Window", [Coords(0,0)], COLORS["RED"])
+
+        self.window_rotation_direction = "Without Rotation"
+        self.window_rotation_angle = 0
 
         self.left_transform = 0
         self.right_transform = 0
@@ -55,6 +63,12 @@ class App:
     def get_canvas_center(self):
         return Coords(self.width / 2,
                       self.height / 2)
+
+    def get_window_height(self):
+        return self.YWMAX - self.YWMIN
+
+    def get_window_width(self):
+        return self.XWMAX - self.XWMIN
 
     def render(self):
         function_container = Frame(self.root, width=30)
@@ -153,10 +167,19 @@ class App:
         self.height = self.canvas.winfo_height()
         self.width = self.canvas.winfo_width()
 
-    def draw(self, mode = None):
-        if not mode:
-            for i in range(len(self.display_file)):
-                self.update_display_file(i, self.display_file[i].coords)
+        self.XWMIN = 0 + self.left_transform
+        self.YWMIN = 0 + self.top_transform
+        self.XWMAX = self.width + self.right_transform
+        self.YWMAX = self.height + self.bottom_transform
+        coords = [Coords(self.XWMIN, self.YWMIN), Coords(self.XWMIN, self.YWMAX), Coords(self.XWMAX, self.YWMAX), Coords(self.XWMAX, self.YWMIN)]
+        self.window.coords = coords
+        
+        # self.display_file.append(self.window)
+        # self.display_file_normalized.append(self.window)
+        # self.draw()
+
+    def draw(self):
+        self.update_all_points_display_file()
         self.canvas.delete("all")
         for obj in self.display_file_show:
             if (len(obj.coords) >= 2):
@@ -174,6 +197,14 @@ class App:
             coords)
         self.display_file_show = self.display_file_normalized
 
+    def update_all_points_display_file(self):
+        self.normalize_display_file()
+        self.display_file_show = []
+        normalized_objects = deepcopy(self.display_file_normalized)
+        for normalized_object in normalized_objects:
+            normalized_object.coords = self.tranform_coords(normalized_object.coords)
+            self.display_file_show.append(normalized_object)
+
     def handle_translation(self, direction):
         selected = self.listbox.curselection()
         if len(selected) > 0:
@@ -187,42 +218,49 @@ class App:
             self.move_window(direction)
 
     def handle_window_rotation(self, direction):
-        self.display_file_rotation = []
-        scn_matrix = self.generate_scn_matrix(direction)
+        # scn_matrix = self.generate_scn_matrix(direction, 10)
+        # graphic_objects = deepcopy(self.display_file)
+
+        # self.display_file_rotation = []
+        # for graphic_object in graphic_objects:
+        #     aux = []
+        #     for coord in graphic_object.coords:
+        #         result = CalculationMatrix('c', coord.to_list()) * scn_matrix
+        #         aux.append(Coords(*result.matrix[0]))
+        #     graphic_object.coords = aux
+        #     self.display_file_rotation.append(graphic_object)
+        
+        self.log.insert(0, "Window rotated " + direction)
+        self.draw()
+        
+    def normalize_display_file(self):
+        scn_matrix = self.generate_scn_matrix(self.window_rotation_direction, self.window_rotation_angle)
         graphic_objects = deepcopy(self.display_file)
+
+        self.display_file_normalized = []
         for graphic_object in graphic_objects:
             aux = []
             for coord in graphic_object.coords:
                 result = CalculationMatrix('c', coord.to_list()) * scn_matrix
                 aux.append(Coords(*result.matrix[0]))
             graphic_object.coords = aux
-            self.display_file_rotation.append(graphic_object)
-        for i in range(len(self.display_file_rotation)):
-            self.update_display_file(i, self.display_file_rotation[i].coords)
-        self.log.insert(0, "Window rotated " + direction)
-        self.draw('rotation')
-        
+            self.display_file_normalized.append(graphic_object)
 
-    def generate_scn_matrix(self, direction):
-        canvas_center = self.get_canvas_center()
+    def generate_scn_matrix(self, direction, angle):
+        window_center = self.window.return_center()
 
-        angle = 0
-        rotation_angle = 10
+        rotation_angle = 0
         if (direction == 'left' ):
-            angle = 360 - rotation_angle
-        else:
-            angle = rotation_angle
+            rotation_angle = 360 - angle
+        elif (direction == 'right'):
+            rotation_angle = angle
         
-        translation_matrix = CalculationMatrix('t', [-(canvas_center.x), -(canvas_center.y)])
+        translation_matrix = CalculationMatrix('t', [-(window_center.x), -(window_center.y)])
+        rotation_matrix = CalculationMatrix('r', rotation_angle)
+        scale_matrix = CalculationMatrix('s',[1/(self.get_window_width() / 2), 1/(self.get_window_height() / 2)])
         
-        rotation_matrix = CalculationMatrix('r', angle)
-
-        scale_matrix = CalculationMatrix('s',[1/(self.width / 2), 1/(self.height / 2)])
-
         scn_matrix = translation_matrix * rotation_matrix * scale_matrix
-
         return scn_matrix
-
 
     def handle_zoom(self, signal):
         selected = self.listbox.curselection()
@@ -270,17 +308,9 @@ class App:
         self.log.insert(0, "zoomed in" if signal > 0 else "zoomed out")
         self.draw()
 
-    def get_viewport_x(self, xw, xwmin, xwmax, xvpmin, xvpmax):
-        return (xw - xwmin) * (xvpmax - xvpmin) / (xwmax - xwmin)
-
-    def get_viewport_y(self, yw, ywmin, ywmax, yvpmin, yvpmax):
-        return (1 - ((yw - ywmin) / (ywmax - ywmin))) * (yvpmax - yvpmin)
-
     def get_viewport_coords(self, wcoords, min_wcoords, max_wcoords, min_vpcoords, max_vpcoords):
-        x = (wcoords.x - min_wcoords.x) * (max_vpcoords.x -
-                                           min_vpcoords.x) / (max_wcoords.x - min_wcoords.x)
-        y = (1 - (wcoords.y - min_wcoords.y) / (max_wcoords.y -
-                                                min_wcoords.y)) * (max_vpcoords.y - min_vpcoords.y)
+        x = (wcoords.x - min_wcoords.x) * (max_vpcoords.x - min_vpcoords.x) / (max_wcoords.x - min_wcoords.x)
+        y = (1 - ((wcoords.y - min_wcoords.y) / (max_wcoords.y - min_wcoords.y))) * (max_vpcoords.y - min_vpcoords.y)
         return Coords(x, y)
 
     def tranform_coords(self, coords):
@@ -290,17 +320,17 @@ class App:
         XVMAX = self.width + self.zoom_width
         YVMAX = self.height + self.zoom_height
 
-        XWMIN = 0 + self.left_transform
-        YWMIN = 0 + self.top_transform
-        XWMAX = self.width + self.right_transform
-        YWMAX = self.height + self.bottom_transform
+        self.XWMIN = 0 + self.left_transform
+        self.YWMIN = 0 + self.top_transform
+        self.XWMAX = self.width + self.right_transform
+        self.YWMAX = self.height + self.bottom_transform
 
-        min_wcoords = Coords(XWMIN, YWMIN)
-        max_wcoords = Coords(XWMAX, YWMAX)
+        min_wcoords = Coords(self.XWMIN, self.YWMIN)
+        max_wcoords = Coords(self.XWMAX, self.YWMAX)
         min_vpcoords = Coords(XVMIN, YVMIN)
         max_vpcoords = Coords(XVMAX, YVMAX)
 
-        for coord in coords:  # ARRAY POS PAR = X / ARRAY POS IMPAR = Y
+        for coord in coords:
             aux.append(self.get_viewport_coords(
                 coord, min_wcoords, max_wcoords, min_vpcoords, max_vpcoords))
         return aux
@@ -405,8 +435,8 @@ class App:
             self.listbox.insert(END, new_object.name)
             self.log.insert(0, "Objected " + new_object.name + " added")
             self.display_file.append(new_object)
-            self.display_file_normalized.append(GraphicObject(
-                self.object_name.get(), self.tranform_coords(self.new_object_coords), COLORS[self.color_combobox.get()]))
+            # self.display_file_normalized.append(GraphicObject(
+            #     self.object_name.get(), self.tranform_coords(self.new_object_coords), COLORS[self.color_combobox.get()]))
             self.display_file_show = self.display_file_normalized
             self.draw()
             self.add_object_screen.destroy()
