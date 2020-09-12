@@ -33,28 +33,13 @@ class App:
         self.display_file_normalized = []
         self.display_file_show = []
 
-        self.XWMIN = 0
-        self.YWMIN = 0
-        self.XWMAX = 0
-        self.YWMAX = 0
-
         self.padding = 10
 
         self.window = GraphicObject("Window", [Coords(0, 0)], COLORS["RED"])
         self.normal_window = GraphicObject("NomalWindow", [Coords(-1, -1), Coords(1, -1), Coords(1, 1), Coords(-1, 1)], COLORS["RED"])
         self.viewport = GraphicObject("Viewport", [Coords(0,0)], COLORS["RED"])
 
-        self.window_rotation_direction = "Without Rotation"
         self.window_rotation_angle = 0
-
-        self.left_transform = 0
-        self.right_transform = 0
-        self.top_transform = 0
-        self.bottom_transform = 0
-
-        self.zoom_height = 0
-        self.zoom_width = 0
-        self.zoom_value = 1
 
         self.height = 0
         self.width = 0
@@ -84,8 +69,7 @@ class App:
         self.listbox = Listbox(function_container, width=35, selectmode=SINGLE)
         self.listbox.pack(side=TOP)
 
-        Button(function_container, width=29, text="Limpar", command=self.handle_clear_selection
-               ).pack(side=TOP)
+        Button(function_container, width=29, text="Limpar", command=self.handle_clear_selection).pack(side=TOP)
 
         add_and_remove_container = Frame(function_container)
         add_and_remove_container.pack(side=TOP, pady=10)
@@ -122,44 +106,31 @@ class App:
 
         self.canvas.bind("<Configure>", self.check)
 
-        Button(add_and_remove_container,
-               text="Adicionar Objeto", command=self.add_object).pack(side=LEFT)
+        Button(add_and_remove_container, text="Adicionar Objeto", command=self.add_object).pack(side=LEFT)
 
-        Button(add_and_remove_container,
-               text="Remover Objeto", command=self.remove_object).pack(side=RIGHT)
+        Button(add_and_remove_container, text="Remover Objeto", command=self.remove_object).pack(side=RIGHT)
 
-        Button(up_container,
-               text="↑", command=lambda: self.handle_translation('up')).pack(side=TOP)
+        Button(up_container, text="↑", command=lambda: self.handle_translation('up')).pack(side=TOP)
 
-        Button(directions_container,
-               text="←", command=lambda: self.handle_translation('left')).pack(side=LEFT)
+        Button(directions_container, text="←", command=lambda: self.handle_translation('left')).pack(side=LEFT)
 
-        Button(directions_container,
-               text="↓", command=lambda: self.handle_translation('down')).pack(side=LEFT)
+        Button(directions_container, text="↓", command=lambda: self.handle_translation('down')).pack(side=LEFT)
 
-        Button(directions_container,
-               text="→", command=lambda: self.handle_translation('right')).pack(side=LEFT)
+        Button(directions_container, text="→", command=lambda: self.handle_translation('right')).pack(side=LEFT)
 
-        Button(zoom_container,
-               text="+", command=lambda: self.handle_zoom(1)).pack()
+        Button(zoom_container, text="+", command=lambda: self.handle_zoom(1)).pack()
 
-        Button(zoom_container,
-               text="-", command=lambda: self.handle_zoom(-1)).pack()
+        Button(zoom_container, text="-", command=lambda: self.handle_zoom(-1)).pack()
 
-        Button(object_actions_container,
-               text="Translação", command=lambda: self.handle_action_click("Translação")).pack(side=LEFT)
+        Button(object_actions_container, text="Translação", command=lambda: self.handle_action_click("Translação")).pack(side=LEFT)
 
-        Button(object_actions_container,
-               text="Rotação", command=lambda: self.handle_action_click("Rotação")).pack(side=LEFT)
+        Button(object_actions_container, text="Rotação", command=lambda: self.handle_action_click("Rotação")).pack(side=LEFT)
 
-        Button(object_actions_container,
-               text="Escala", command=lambda: self.handle_action_click("Escala")).pack(side=LEFT)
+        Button(object_actions_container, text="Escala", command=lambda: self.handle_action_click("Escala")).pack(side=LEFT)
 
-        Button(rotation_container,
-               text="↶", command=lambda: self.handle_window_rotation('left')).pack(side=LEFT)
+        Button(rotation_container, text="↶", command=lambda: self.handle_window_rotation('left')).pack(side=LEFT)
 
-        Button(rotation_container,
-               text="↷", command=lambda: self.handle_window_rotation('right')).pack(side=LEFT)
+        Button(rotation_container, text="↷", command=lambda: self.handle_window_rotation('right')).pack(side=LEFT)
 
         self.log = Listbox(function_container, width=35)
         self.log.pack(fill=Y, side=BOTTOM)
@@ -171,23 +142,23 @@ class App:
         self.height = self.canvas.winfo_height()
         self.width = self.canvas.winfo_width()
 
-        self.XWMIN = 0
-        self.YWMIN = 0
-        self.XWMAX = self.width
-        self.YWMAX = self.height
+        XWMIN = 0
+        YWMIN = 0
+        XWMAX = self.width
+        YWMAX = self.height
 
         self.window.coords = [
-          Coords(self.XWMIN, self.YWMIN),
-          Coords(self.XWMIN, self.YWMAX),
-          Coords(self.XWMAX, self.YWMAX),
-          Coords(self.XWMAX, self.YWMIN)
+          Coords(XWMIN, YWMIN),
+          Coords(XWMIN, YWMAX),
+          Coords(XWMAX, YWMAX),
+          Coords(XWMAX, YWMIN)
         ]
 
         self.viewport.coords = [
-          Coords(self.XWMIN + self.padding, self.YWMIN + self.padding),
-          Coords(self.XWMIN + self.padding, self.YWMAX - self.padding),
-          Coords(self.XWMAX - self.padding, self.YWMAX - self.padding),
-          Coords(self.XWMAX - self.padding, self.YWMIN + self.padding)
+          Coords(XWMIN + self.padding, YWMIN + self.padding),
+          Coords(XWMIN + self.padding, YWMAX - self.padding),
+          Coords(XWMAX - self.padding, YWMAX - self.padding),
+          Coords(XWMAX - self.padding, YWMIN + self.padding)
         ]
 
         self.draw()
@@ -207,19 +178,19 @@ class App:
             if (len(obj.coords) > 2):
                 coords = []
                 for coord in obj.coords:
-                    coords += [coord.x, coord.y]
+                    coords += [coord.x + self.padding, coord.y + self.padding]
                 self.canvas.create_polygon(coords, tags=obj.name, outline=obj.color, fill="")
             elif (len(obj.coords) == 2):
                 coords = []
                 for coord in obj.coords:
-                    coords += [coord.x, coord.y]
+                    coords += [coord.x + self.padding, coord.y + self.padding]
                 self.canvas.create_line(coords, tags=obj.name, fill=obj.color)
             else:
                 self.canvas.create_oval(
-                    obj.coords[0].x - 1, obj.coords[0].y - 1, obj.coords[0].x + 1, obj.coords[0].y + 1, fill=obj.color)
+                    obj.coords[0].x - 1 + + self.padding, obj.coords[0].y - 1 + + self.padding, obj.coords[0].x + 1 + self.padding, obj.coords[0].y + 1 + self.padding, fill=obj.color)
 
     def update_display_file(self, index, coords):
-        self.display_file_normalized[index].coords = self.tranform_coords(
+        self.display_file_normalized[index].coords = self.transform_coords(
             coords)
         self.display_file_show = self.display_file_normalized
 
@@ -229,7 +200,7 @@ class App:
         # self.display_file_normalized = deepcopy(self.display_file)
         normalized_objects = deepcopy(self.display_file_normalized)
         for normalized_object in normalized_objects:
-            normalized_object.coords = self.tranform_coords(normalized_object.coords)
+            normalized_object.coords = self.transform_coords(normalized_object.coords)
             self.display_file_show.append(normalized_object)
 
     def handle_translation(self, direction):
@@ -338,7 +309,7 @@ class App:
         y = (1 - ((wcoords.y - min_wcoords.y) / (max_wcoords.y - min_wcoords.y))) * (max_vpcoords.y - min_vpcoords.y)
         return Coords(x, y)
 
-    def tranform_coords(self, coords):
+    def transform_coords(self, coords):
         aux = []
         for coord in coords:
             aux.append(self.get_viewport_coords(coord))
