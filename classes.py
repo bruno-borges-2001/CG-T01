@@ -87,7 +87,6 @@ class GraphicObject:
                 CalculationMatrix('t', [Cx, Cy])
             aux.append(Coords(*result.matrix[0]))
         self.coords = aux
-        print(list(map(str, self.coords)))
 
     def scale(self, Sx, Sy):
         aux = []
@@ -96,7 +95,6 @@ class GraphicObject:
                 CalculationMatrix('s', [Sx, Sy])
             aux.append(Coords(*result.matrix[0]))
         self.coords = aux
-        print(list(map(str, self.coords)))
 
     def center_scale(self, Sx, Sy):
         self.get_center()
@@ -116,7 +114,6 @@ class GraphicObject:
         self.coords = aux
 
         self.translate(Dx, Dy)
-        print(list(map(str, self.coords)))
 
     def get_center(self):
         center_x = 0

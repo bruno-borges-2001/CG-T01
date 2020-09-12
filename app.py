@@ -38,7 +38,11 @@ class App:
         self.XWMAX = 0
         self.YWMAX = 0
 
-        self.window = GraphicObject("Window", [Coords(0,0)], COLORS["RED"])
+        self.padding = 10
+
+        self.window = GraphicObject("Window", [Coords(0, 0)], COLORS["RED"])
+        self.normal_window = GraphicObject("NomalWindow", [Coords(-1, -1), Coords(1, -1), Coords(1, 1), Coords(-1, 1)], COLORS["RED"])
+        self.viewport = GraphicObject("Viewport", [Coords(0,0)], COLORS["RED"])
 
         self.window_rotation_direction = "Without Rotation"
         self.window_rotation_angle = 0
@@ -50,6 +54,7 @@ class App:
 
         self.zoom_height = 0
         self.zoom_width = 0
+        self.zoom_value = 1
 
         self.height = 0
         self.width = 0
@@ -65,10 +70,10 @@ class App:
                       self.height / 2)
 
     def get_window_height(self):
-        return self.YWMAX - self.YWMIN
+        return self.window.coords[2].y - self.window.coords[0].y
 
     def get_window_width(self):
-        return self.XWMAX - self.XWMIN
+        return self.window.coords[2].x - self.window.coords[0].x
 
     def render(self):
         function_container = Frame(self.root, width=30)
@@ -163,17 +168,30 @@ class App:
         self.listbox.select_clear(0, END)
 
     def check(self, event):
-        print(event)
         self.height = self.canvas.winfo_height()
         self.width = self.canvas.winfo_width()
 
-        self.XWMIN = 0 + self.left_transform
-        self.YWMIN = 0 + self.top_transform
-        self.XWMAX = self.width + self.right_transform
-        self.YWMAX = self.height + self.bottom_transform
-        coords = [Coords(self.XWMIN, self.YWMIN), Coords(self.XWMIN, self.YWMAX), Coords(self.XWMAX, self.YWMAX), Coords(self.XWMAX, self.YWMIN)]
-        self.window.coords = coords
-        
+        self.XWMIN = 0
+        self.YWMIN = 0
+        self.XWMAX = self.width
+        self.YWMAX = self.height
+
+        self.window.coords = [
+          Coords(self.XWMIN, self.YWMIN),
+          Coords(self.XWMIN, self.YWMAX),
+          Coords(self.XWMAX, self.YWMAX),
+          Coords(self.XWMAX, self.YWMIN)
+        ]
+
+        self.viewport.coords = [
+          Coords(self.XWMIN + self.padding, self.YWMIN + self.padding),
+          Coords(self.XWMIN + self.padding, self.YWMAX - self.padding),
+          Coords(self.XWMAX - self.padding, self.YWMAX - self.padding),
+          Coords(self.XWMAX - self.padding, self.YWMIN + self.padding)
+        ]
+
+        self.draw()
+
         # self.display_file.append(self.window)
         # self.display_file_normalized.append(self.window)
         # self.draw()
@@ -181,12 +199,20 @@ class App:
     def draw(self):
         self.update_all_points_display_file()
         self.canvas.delete("all")
+        aux = []
+        for coord in self.viewport.coords:
+            aux += coord.to_list()[:-1]
+        self.canvas.create_polygon(aux, tags="viewport", outline=self.viewport.color, fill="")
         for obj in self.display_file_show:
-            if (len(obj.coords) >= 2):
+            if (len(obj.coords) > 2):
                 coords = []
                 for coord in obj.coords:
                     coords += [coord.x, coord.y]
-                coords += [obj.coords[0].x, obj.coords[0].y]
+                self.canvas.create_polygon(coords, tags=obj.name, outline=obj.color, fill="")
+            elif (len(obj.coords) == 2):
+                coords = []
+                for coord in obj.coords:
+                    coords += [coord.x, coord.y]
                 self.canvas.create_line(coords, tags=obj.name, fill=obj.color)
             else:
                 self.canvas.create_oval(
@@ -200,6 +226,7 @@ class App:
     def update_all_points_display_file(self):
         self.normalize_display_file()
         self.display_file_show = []
+        # self.display_file_normalized = deepcopy(self.display_file)
         normalized_objects = deepcopy(self.display_file_normalized)
         for normalized_object in normalized_objects:
             normalized_object.coords = self.tranform_coords(normalized_object.coords)
@@ -229,12 +256,14 @@ class App:
         #         aux.append(Coords(*result.matrix[0]))
         #     graphic_object.coords = aux
         #     self.display_file_rotation.append(graphic_object)
-        
+
+        self.window_rotation_angle += 15 if direction == 'right' else -15
+
         self.log.insert(0, "Window rotated " + direction)
         self.draw()
-        
+
     def normalize_display_file(self):
-        scn_matrix = self.generate_scn_matrix(self.window_rotation_direction, self.window_rotation_angle)
+        scn_matrix = self.generate_scn_matrix()
         graphic_objects = deepcopy(self.display_file)
 
         self.display_file_normalized = []
@@ -246,19 +275,13 @@ class App:
             graphic_object.coords = aux
             self.display_file_normalized.append(graphic_object)
 
-    def generate_scn_matrix(self, direction, angle):
+    def generate_scn_matrix(self):
         window_center = self.window.return_center()
 
-        rotation_angle = 0
-        if (direction == 'left' ):
-            rotation_angle = 360 - angle
-        elif (direction == 'right'):
-            rotation_angle = angle
-        
         translation_matrix = CalculationMatrix('t', [-(window_center.x), -(window_center.y)])
-        rotation_matrix = CalculationMatrix('r', rotation_angle)
+        rotation_matrix = CalculationMatrix('r', self.window_rotation_angle)
         scale_matrix = CalculationMatrix('s',[1/(self.get_window_width() / 2), 1/(self.get_window_height() / 2)])
-        
+
         scn_matrix = translation_matrix * rotation_matrix * scale_matrix
         return scn_matrix
 
@@ -275,64 +298,50 @@ class App:
             self.zoom(signal)
 
     def get_translate_values(self, direction):
-        vertical = self.height * 0.1
-        horizontal = self.width * 0.1
+        value = self.get_window_height() * 0.1
         if (direction == 'up'):
-            return (0, vertical)
+            return (0, value)
         elif (direction == 'down'):
-            return (0, -vertical)
+            return (0, -value)
         elif (direction == 'left'):
-            return (-horizontal, 0)
+            return (-value, 0)
         elif (direction == 'right'):
-            return (horizontal, 0)
+            return (value, 0)
 
     def move_window(self, direction):
+        Cx = 0
+        Cy = 0
         if (direction == 'up'):
-            self.top_transform += self.height * 0.1
-            self.bottom_transform += self.height * 0.1
+          Cy = self.get_window_height() * 0.1
         elif (direction == 'down'):
-            self.top_transform -= self.height * 0.1
-            self.bottom_transform -= self.height * 0.1
-        elif (direction == 'left'):
-            self.left_transform -= self.width * 0.1
-            self.right_transform -= self.width * 0.1
+          Cy = -self.get_window_height() * 0.1
+        elif (direction == "left"):
+          Cx = -self.get_window_height() * 0.1
         elif (direction == 'right'):
-            self.left_transform += self.width * 0.1
-            self.right_transform += self.width * 0.1
+          Cx = self.get_window_height() * 0.1
+        self.window.translate(Cx, Cy)
         self.log.insert(0, "Window moved " + direction)
         self.draw()
 
     def zoom(self, signal):
-        self.zoom_height += signal * self.height * 0.05
-        self.zoom_width += signal * self.width * 0.05
+        zoom_value = 0.9 if signal > 0 else 1.1
+        self.window.center_scale(zoom_value, zoom_value)
         self.log.insert(0, "zoomed in" if signal > 0 else "zoomed out")
         self.draw()
 
-    def get_viewport_coords(self, wcoords, min_wcoords, max_wcoords, min_vpcoords, max_vpcoords):
+    def get_viewport_coords(self, wcoords):
+        min_wcoords = self.normal_window.coords[0]
+        max_wcoords = self.normal_window.coords[2]
+        min_vpcoords = self.viewport.coords[0]
+        max_vpcoords = self.viewport.coords[2]
         x = (wcoords.x - min_wcoords.x) * (max_vpcoords.x - min_vpcoords.x) / (max_wcoords.x - min_wcoords.x)
         y = (1 - ((wcoords.y - min_wcoords.y) / (max_wcoords.y - min_wcoords.y))) * (max_vpcoords.y - min_vpcoords.y)
         return Coords(x, y)
 
     def tranform_coords(self, coords):
         aux = []
-        XVMIN = 0 - self.zoom_width
-        YVMIN = 0 - self.zoom_height
-        XVMAX = self.width + self.zoom_width
-        YVMAX = self.height + self.zoom_height
-
-        self.XWMIN = 0 + self.left_transform
-        self.YWMIN = 0 + self.top_transform
-        self.XWMAX = self.width + self.right_transform
-        self.YWMAX = self.height + self.bottom_transform
-
-        min_wcoords = Coords(self.XWMIN, self.YWMIN)
-        max_wcoords = Coords(self.XWMAX, self.YWMAX)
-        min_vpcoords = Coords(XVMIN, YVMIN)
-        max_vpcoords = Coords(XVMAX, YVMAX)
-
         for coord in coords:
-            aux.append(self.get_viewport_coords(
-                coord, min_wcoords, max_wcoords, min_vpcoords, max_vpcoords))
+            aux.append(self.get_viewport_coords(coord))
         return aux
 
     def add_object(self):
@@ -382,11 +391,9 @@ class App:
 
         self.buttons_container.pack(side=TOP)
 
-        Button(self.buttons_container, text="Adicionar ponto",
-               command=self.add_point).pack()
+        Button(self.buttons_container, text="Adicionar ponto", command=self.add_point).pack()
         self.new_object_listbox.pack(pady=5)
-        Button(self.buttons_container, text="Adicionar objeto",
-               command=self.add_object_on_screen).pack()
+        Button(self.buttons_container, text="Adicionar objeto", command=self.add_object_on_screen).pack()
 
     def remove_object(self):
         self.log.insert(
@@ -437,6 +444,6 @@ class App:
             self.display_file.append(new_object)
             # self.display_file_normalized.append(GraphicObject(
             #     self.object_name.get(), self.tranform_coords(self.new_object_coords), COLORS[self.color_combobox.get()]))
-            self.display_file_show = self.display_file_normalized
+            # self.display_file_show = self.display_file_normalized
             self.draw()
             self.add_object_screen.destroy()
