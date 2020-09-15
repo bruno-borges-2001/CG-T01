@@ -50,271 +50,6 @@ class App:
         self.canvas_container.update_idletasks()
         self.canvas.update_idletasks()
 
-    def get_canvas_center(self):
-        return Coords(self.width / 2,
-                      self.height / 2)
-
-    def get_window_height(self):
-        return self.window.coords[2].y - self.window.coords[0].y
-
-    def get_window_width(self):
-        return self.window.coords[2].x - self.window.coords[0].x
-
-    def render(self):
-        function_container = Frame(self.root, width=30)
-        function_container.pack(side=LEFT, fill=Y)
-
-        Label(function_container, text="Funcoes", width=30).pack(side=TOP)
-
-        self.listbox = Listbox(function_container, width=35, selectmode=SINGLE)
-        self.listbox.pack(side=TOP)
-
-        Button(function_container, width=29, text="Limpar", command=self.handle_clear_selection).pack(side=TOP)
-
-        add_and_remove_container = Frame(function_container)
-        add_and_remove_container.pack(side=TOP, pady=10)
-
-        Label(function_container,
-              text="Window/Objeto (selecione na listbox)", width=30).pack(side=TOP)
-
-        main_button_container = Frame(function_container, width=35)
-        main_button_container.pack(side=TOP)
-
-        arrows_container = Frame(main_button_container, padx=10)
-        arrows_container.pack(side=LEFT)
-
-        up_container = Frame(arrows_container)
-        up_container.pack(side=TOP)
-
-        directions_container = Frame(arrows_container)
-        directions_container.pack(side=TOP)
-
-        zoom_container = Frame(main_button_container)
-        zoom_container.pack(side=RIGHT, pady=10, padx=10)
-
-        object_actions_container = Frame(function_container)
-        object_actions_container.pack(side=TOP)
-
-        rotation_container = Frame(function_container)
-        rotation_container.pack(side=TOP, pady=10)
-
-        self.canvas_container = Frame(self.root)
-        self.canvas_container.pack(fill=BOTH, expand=True)
-
-        self.canvas = Canvas(self.canvas_container, background="white")
-        self.canvas.pack(fill=BOTH, expand=True)
-
-        self.canvas.bind("<Configure>", self.check)
-
-        Button(add_and_remove_container, text="Adicionar Objeto", command=self.add_object).pack(side=LEFT)
-
-        Button(add_and_remove_container, text="Remover Objeto", command=self.remove_object).pack(side=RIGHT)
-
-        Button(up_container, text="↑", command=lambda: self.handle_translation('up')).pack(side=TOP)
-
-        Button(directions_container, text="←", command=lambda: self.handle_translation('left')).pack(side=LEFT)
-
-        Button(directions_container, text="↓", command=lambda: self.handle_translation('down')).pack(side=LEFT)
-
-        Button(directions_container, text="→", command=lambda: self.handle_translation('right')).pack(side=LEFT)
-
-        Button(zoom_container, text="+", command=lambda: self.handle_zoom(1)).pack()
-
-        Button(zoom_container, text="-", command=lambda: self.handle_zoom(-1)).pack()
-
-        Button(object_actions_container, text="Translação", command=lambda: self.handle_action_click("Translação")).pack(side=LEFT)
-
-        Button(object_actions_container, text="Rotação", command=lambda: self.handle_action_click("Rotação")).pack(side=LEFT)
-
-        Button(object_actions_container, text="Escala", command=lambda: self.handle_action_click("Escala")).pack(side=LEFT)
-
-        Button(rotation_container, text="↶", command=lambda: self.handle_window_rotation('left')).pack(side=LEFT)
-
-        Button(rotation_container, text="↷", command=lambda: self.handle_window_rotation('right')).pack(side=LEFT)
-
-        self.log = Listbox(function_container, width=35)
-        self.log.pack(fill=Y, side=BOTTOM)
-
-    def handle_clear_selection(self):
-        self.listbox.select_clear(0, END)
-
-    def check(self, event):
-        self.height = self.canvas.winfo_height()
-        self.width = self.canvas.winfo_width()
-
-        XWMIN = 0
-        YWMIN = 0
-        XWMAX = self.width
-        YWMAX = self.height
-
-        self.window.coords = [
-          Coords(XWMIN, YWMIN),
-          Coords(XWMIN, YWMAX),
-          Coords(XWMAX, YWMAX),
-          Coords(XWMAX, YWMIN)
-        ]
-
-        self.viewport.coords = [
-          Coords(XWMIN + self.padding, YWMIN + self.padding),
-          Coords(XWMIN + self.padding, YWMAX - self.padding),
-          Coords(XWMAX - self.padding, YWMAX - self.padding),
-          Coords(XWMAX - self.padding, YWMIN + self.padding)
-        ]
-
-        self.draw()
-
-        # self.display_file.append(self.window)
-        # self.display_file_normalized.append(self.window)
-        # self.draw()
-
-    def draw(self):
-        self.update_all_points_display_file()
-        self.canvas.delete("all")
-        aux = []
-        for coord in self.viewport.coords:
-            aux += coord.to_list()[:-1]
-        self.canvas.create_polygon(aux, tags="viewport", outline=self.viewport.color, fill="")
-        for obj in self.display_file_show:
-            if (len(obj.coords) > 2):
-                coords = []
-                for coord in obj.coords:
-                    coords += [coord.x + self.padding, coord.y + self.padding]
-                self.canvas.create_polygon(coords, tags=obj.name, outline=obj.color, fill="")
-            elif (len(obj.coords) == 2):
-                coords = []
-                for coord in obj.coords:
-                    coords += [coord.x + self.padding, coord.y + self.padding]
-                self.canvas.create_line(coords, tags=obj.name, fill=obj.color)
-            else:
-                self.canvas.create_oval(
-                    obj.coords[0].x - 1 + + self.padding, obj.coords[0].y - 1 + + self.padding, obj.coords[0].x + 1 + self.padding, obj.coords[0].y + 1 + self.padding, fill=obj.color)
-
-    def update_display_file(self, index, coords):
-        self.display_file_normalized[index].coords = self.transform_coords(
-            coords)
-        self.display_file_show = self.display_file_normalized
-
-    def update_all_points_display_file(self):
-        self.normalize_display_file()
-        self.display_file_show = []
-        # self.display_file_normalized = deepcopy(self.display_file)
-        normalized_objects = deepcopy(self.display_file_normalized)
-        for normalized_object in normalized_objects:
-            normalized_object.coords = self.transform_coords(normalized_object.coords)
-            self.display_file_show.append(normalized_object)
-
-    def handle_translation(self, direction):
-        selected = self.listbox.curselection()
-        if len(selected) > 0:
-            values = self.get_translate_values(direction)
-            for item in selected:
-                self.log.insert(
-                    0, "Object " + self.display_file[item].name + " moved " + direction)
-                self.display_file[item].translate(*values)
-            self.draw()
-        else:
-            self.move_window(direction)
-
-    def handle_window_rotation(self, direction):
-        # scn_matrix = self.generate_scn_matrix(direction, 10)
-        # graphic_objects = deepcopy(self.display_file)
-
-        # self.display_file_rotation = []
-        # for graphic_object in graphic_objects:
-        #     aux = []
-        #     for coord in graphic_object.coords:
-        #         result = CalculationMatrix('c', coord.to_list()) * scn_matrix
-        #         aux.append(Coords(*result.matrix[0]))
-        #     graphic_object.coords = aux
-        #     self.display_file_rotation.append(graphic_object)
-
-        self.window_rotation_angle += 15 if direction == 'right' else -15
-
-        self.log.insert(0, "Window rotated " + direction)
-        self.draw()
-
-    def normalize_display_file(self):
-        scn_matrix = self.generate_scn_matrix()
-        graphic_objects = deepcopy(self.display_file)
-
-        self.display_file_normalized = []
-        for graphic_object in graphic_objects:
-            aux = []
-            for coord in graphic_object.coords:
-                result = CalculationMatrix('c', coord.to_list()) * scn_matrix
-                aux.append(Coords(*result.matrix[0]))
-            graphic_object.coords = aux
-            self.display_file_normalized.append(graphic_object)
-
-    def generate_scn_matrix(self):
-        window_center = self.window.return_center()
-
-        translation_matrix = CalculationMatrix('t', [-(window_center.x), -(window_center.y)])
-        rotation_matrix = CalculationMatrix('r', self.window_rotation_angle)
-        scale_matrix = CalculationMatrix('s',[1/(self.get_window_width() / 2), 1/(self.get_window_height() / 2)])
-
-        scn_matrix = translation_matrix * rotation_matrix * scale_matrix
-        return scn_matrix
-
-    def handle_zoom(self, signal):
-        selected = self.listbox.curselection()
-        if len(selected) > 0:
-            zoom = 1.1 if signal > 0 else 0.9
-            for item in selected:
-                self.log.insert(
-                    0, "Object " + self.display_file[item].name + " zoomed " + ("in" if signal > 0 else "out"))
-                self.display_file[item].center_scale(zoom, zoom)
-            self.draw()
-        else:
-            self.zoom(signal)
-
-    def get_translate_values(self, direction):
-        value = self.get_window_height() * 0.1
-        if (direction == 'up'):
-            return (0, value)
-        elif (direction == 'down'):
-            return (0, -value)
-        elif (direction == 'left'):
-            return (-value, 0)
-        elif (direction == 'right'):
-            return (value, 0)
-
-    def move_window(self, direction):
-        Cx = 0
-        Cy = 0
-        if (direction == 'up'):
-          Cy = self.get_window_height() * 0.1
-        elif (direction == 'down'):
-          Cy = -self.get_window_height() * 0.1
-        elif (direction == "left"):
-          Cx = -self.get_window_height() * 0.1
-        elif (direction == 'right'):
-          Cx = self.get_window_height() * 0.1
-        self.window.translate(Cx, Cy)
-        self.log.insert(0, "Window moved " + direction)
-        self.draw()
-
-    def zoom(self, signal):
-        zoom_value = 0.9 if signal > 0 else 1.1
-        self.window.center_scale(zoom_value, zoom_value)
-        self.log.insert(0, "zoomed in" if signal > 0 else "zoomed out")
-        self.draw()
-
-    def get_viewport_coords(self, wcoords):
-        min_wcoords = self.normal_window.coords[0]
-        max_wcoords = self.normal_window.coords[2]
-        min_vpcoords = self.viewport.coords[0]
-        max_vpcoords = self.viewport.coords[2]
-        x = (wcoords.x - min_wcoords.x) * (max_vpcoords.x - min_vpcoords.x) / (max_wcoords.x - min_wcoords.x)
-        y = (1 - ((wcoords.y - min_wcoords.y) / (max_wcoords.y - min_wcoords.y))) * (max_vpcoords.y - min_vpcoords.y)
-        return Coords(x, y)
-
-    def transform_coords(self, coords):
-        aux = []
-        for coord in coords:
-            aux.append(self.get_viewport_coords(coord))
-        return aux
-
     def add_object(self):
         self.new_object_coords = []
 
@@ -362,19 +97,24 @@ class App:
 
         self.buttons_container.pack(side=TOP)
 
-        Button(self.buttons_container, text="Adicionar ponto", command=self.add_point).pack()
+        Button(self.buttons_container, text="Adicionar ponto",
+               command=self.add_point).pack()
         self.new_object_listbox.pack(pady=5)
-        Button(self.buttons_container, text="Adicionar objeto", command=self.add_object_on_screen).pack()
+        Button(self.buttons_container, text="Adicionar objeto",
+               command=self.add_object_on_screen).pack()
 
-    def remove_object(self):
-        self.log.insert(
-            0, "Object " + self.listbox.get(self.listbox.curselection()) + " removed")
-        self.canvas.delete(self.listbox.get(self.listbox.curselection()))
-        self.display_file.pop(self.listbox.curselection()[0])
-        self.listbox.delete(self.listbox.curselection())
-
-    def start_app(self):
-        self.root.mainloop()
+    def add_object_on_screen(self):
+        if (len(self.object_name.get()) > 0 and len(self.new_object_coords) > 0):
+            new_object = GraphicObject(
+                self.object_name.get(), self.new_object_coords, COLORS[self.color_combobox.get()])
+            self.listbox.insert(END, new_object.name)
+            self.log.insert(0, "Objected " + new_object.name + " added")
+            self.display_file.append(new_object)
+            # self.display_file_normalized.append(GraphicObject(
+            #     self.object_name.get(), self.tranform_coords(self.new_object_coords), COLORS[self.color_combobox.get()]))
+            # self.display_file_show = self.display_file_normalized
+            self.draw()
+            self.add_object_screen.destroy()
 
     def add_point(self):
         x = self.point_x.get()
@@ -384,11 +124,107 @@ class App:
         self.point_x.set(0)
         self.point_y.set(0)
 
+    def check(self, event):
+        self.height = self.canvas.winfo_height()
+        self.width = self.canvas.winfo_width()
+
+        XWMIN = 0
+        YWMIN = 0
+        XWMAX = self.width
+        YWMAX = self.height
+
+        self.window.coords = [
+          Coords(XWMIN, YWMIN),
+          Coords(XWMIN, YWMAX),
+          Coords(XWMAX, YWMAX),
+          Coords(XWMAX, YWMIN)
+        ]
+
+        self.viewport.coords = [
+          Coords(XWMIN + self.padding, YWMIN + self.padding),
+          Coords(XWMIN + self.padding, YWMAX - self.padding),
+          Coords(XWMAX - self.padding, YWMAX - self.padding),
+          Coords(XWMAX - self.padding, YWMIN + self.padding)
+        ]
+
+        self.draw()
+
+    def draw(self):
+        self.update_all_points_display_file()
+        self.canvas.delete("all")
+        aux = []
+        for coord in self.viewport.coords:
+            aux += coord.to_list()[:-1]
+        self.canvas.create_polygon(
+            aux, tags="viewport", outline=self.viewport.color, fill="")
+        for obj in self.display_file_show:
+            if (len(obj.coords) > 2):
+                coords = []
+                for coord in obj.coords:
+                    coords += [coord.x + self.padding, coord.y + self.padding]
+                self.canvas.create_polygon(
+                    coords, tags=obj.name, outline=obj.color, fill="")
+            elif (len(obj.coords) == 2):
+                coords = []
+                for coord in obj.coords:
+                    coords += [coord.x + self.padding, coord.y + self.padding]
+                self.canvas.create_line(coords, tags=obj.name, fill=obj.color)
+            else:
+                self.canvas.create_oval(
+                    obj.coords[0].x - 1 + self.padding, obj.coords[0].y - 1 + self.padding, obj.coords[0].x + 1 + self.padding, obj.coords[0].y + 1 + self.padding, fill=obj.color)
+
+    def generate_scn_matrix(self):
+        window_center = self.window.return_center()
+
+        translation_matrix = CalculationMatrix(
+            't', [-(window_center.x), -(window_center.y)])
+        rotation_matrix = CalculationMatrix('r', self.window_rotation_angle)
+        scale_matrix = CalculationMatrix(
+            's', [1/(self.get_window_width() / 2), 1/(self.get_window_height() / 2)])
+
+        scn_matrix = translation_matrix * rotation_matrix * scale_matrix
+        return scn_matrix
+
+    def get_canvas_center(self):
+        return Coords(self.width / 2,
+                      self.height / 2)
+
+    def get_window_height(self):
+        return self.window.coords[2].y - self.window.coords[0].y
+
+    def get_window_width(self):
+        return self.window.coords[2].x - self.window.coords[0].x
+
+    def get_translate_values(self, direction):
+        value = self.get_window_height() * 0.1
+        if (direction == 'up'):
+            return (0, value)
+        elif (direction == 'down'):
+            return (0, -value)
+        elif (direction == 'left'):
+            return (-value, 0)
+        elif (direction == 'right'):
+            return (value, 0)
+
+    def get_viewport_coords(self, wcoords):
+        min_wcoords = self.normal_window.coords[0]
+        max_wcoords = self.normal_window.coords[2]
+        min_vpcoords = self.viewport.coords[0]
+        max_vpcoords = self.viewport.coords[2]
+        x = (wcoords.x - min_wcoords.x) * (max_vpcoords.x -
+                                           min_vpcoords.x) / (max_wcoords.x - min_wcoords.x)
+        y = (1 - ((wcoords.y - min_wcoords.y) / (max_wcoords.y -
+                                                 min_wcoords.y))) * (max_vpcoords.y - min_vpcoords.y)
+        return Coords(x, y)
+
     def handle_action_click(self, action):
         selection = self.listbox.curselection()
         if len(selection) > 0:
             self.popup = Popup(
                 self.root, action, selection[0], lambda item, values: self.handle_submit(item, action, values))
+
+    def handle_clear_selection(self):
+        self.listbox.select_clear(0, END)
 
     def handle_submit(self, item, action, values):
         if action == "Translação":
@@ -406,15 +242,190 @@ class App:
         self.popup.destroy()
         self.draw()
 
-    def add_object_on_screen(self):
-        if (len(self.object_name.get()) > 0 and len(self.new_object_coords) > 0):
-            new_object = GraphicObject(
-                self.object_name.get(), self.new_object_coords, COLORS[self.color_combobox.get()])
-            self.listbox.insert(END, new_object.name)
-            self.log.insert(0, "Objected " + new_object.name + " added")
-            self.display_file.append(new_object)
-            # self.display_file_normalized.append(GraphicObject(
-            #     self.object_name.get(), self.tranform_coords(self.new_object_coords), COLORS[self.color_combobox.get()]))
-            # self.display_file_show = self.display_file_normalized
+    def handle_translation(self, direction):
+        selected = self.listbox.curselection()
+        if len(selected) > 0:
+            values = self.get_translate_values(direction)
+            for item in selected:
+                self.log.insert(
+                    0, "Object " + self.display_file[item].name + " moved " + direction)
+                self.display_file[item].translate(*values)
             self.draw()
-            self.add_object_screen.destroy()
+        else:
+            self.move_window(direction)
+
+    def handle_window_rotation(self, direction):
+        self.window_rotation_angle += 15 if direction == 'right' else -15
+
+        self.log.insert(0, "Window rotated " + direction)
+        self.draw()
+
+    def handle_zoom(self, signal):
+        selected = self.listbox.curselection()
+        if len(selected) > 0:
+            zoom = 1.1 if signal > 0 else 0.9
+            for item in selected:
+                self.log.insert(
+                    0, "Object " + self.display_file[item].name + " zoomed " + ("in" if signal > 0 else "out"))
+                self.display_file[item].center_scale(zoom, zoom)
+            self.draw()
+        else:
+            self.zoom(signal)
+
+    def move_window(self, direction):
+        Cx = 0
+        Cy = 0
+        if (direction == 'up'):
+          Cy = self.get_window_height() * 0.1
+        elif (direction == 'down'):
+          Cy = -self.get_window_height() * 0.1
+        elif (direction == "left"):
+          Cx = -self.get_window_height() * 0.1
+        elif (direction == 'right'):
+          Cx = self.get_window_height() * 0.1
+        self.window.translate(Cx, Cy)
+        self.log.insert(0, "Window moved " + direction)
+        self.draw()
+
+    def normalize_display_file(self):
+        scn_matrix = self.generate_scn_matrix()
+        graphic_objects = deepcopy(self.display_file)
+
+        self.display_file_normalized = []
+        for graphic_object in graphic_objects:
+            aux = []
+            for coord in graphic_object.coords:
+                result = CalculationMatrix('c', coord.to_list()) * scn_matrix
+                aux.append(Coords(*result.matrix[0]))
+            graphic_object.coords = aux
+            self.display_file_normalized.append(graphic_object)
+
+    def remove_object(self):
+        self.log.insert(
+            0, "Object " + self.listbox.get(self.listbox.curselection()) + " removed")
+        self.canvas.delete(self.listbox.get(self.listbox.curselection()))
+        self.display_file.pop(self.listbox.curselection()[0])
+        self.listbox.delete(self.listbox.curselection())
+        self.draw()
+
+    def render(self):
+        function_container = Frame(self.root, width=30)
+        function_container.pack(side=LEFT, fill=Y)
+
+        Label(function_container, text="Funcoes", width=30).pack(side=TOP)
+
+        self.listbox = Listbox(function_container, width=35, selectmode=SINGLE)
+        self.listbox.pack(side=TOP)
+
+        Button(function_container, width=29, text="Limpar",
+               command=self.handle_clear_selection).pack(side=TOP)
+
+        add_and_remove_container = Frame(function_container)
+        add_and_remove_container.pack(side=TOP, pady=10)
+
+        Label(function_container,
+              text="Window/Objeto (selecione na listbox)", width=30).pack(side=TOP)
+
+        main_button_container = Frame(function_container, width=35)
+        main_button_container.pack(side=TOP)
+
+        arrows_container = Frame(main_button_container, padx=10)
+        arrows_container.pack(side=LEFT)
+
+        up_container = Frame(arrows_container)
+        up_container.pack(side=TOP)
+
+        directions_container = Frame(arrows_container)
+        directions_container.pack(side=TOP)
+
+        zoom_container = Frame(main_button_container)
+        zoom_container.pack(side=RIGHT, pady=10, padx=10)
+
+        object_actions_container = Frame(function_container)
+        object_actions_container.pack(side=TOP)
+
+        rotation_container = Frame(function_container)
+        rotation_container.pack(side=TOP, pady=10)
+
+        self.canvas_container = Frame(self.root)
+        self.canvas_container.pack(fill=BOTH, expand=True)
+
+        self.canvas = Canvas(self.canvas_container, background="white")
+        self.canvas.pack(fill=BOTH, expand=True)
+
+        self.canvas.bind("<Configure>", self.check)
+
+        Button(add_and_remove_container, text="Adicionar Objeto",
+               command=self.add_object).pack(side=LEFT)
+
+        Button(add_and_remove_container, text="Remover Objeto",
+               command=self.remove_object).pack(side=RIGHT)
+
+        Button(up_container, text="↑",
+               command=lambda: self.handle_translation('up')).pack(side=TOP)
+
+        Button(directions_container, text="←",
+               command=lambda: self.handle_translation('left')).pack(side=LEFT)
+
+        Button(directions_container, text="↓",
+               command=lambda: self.handle_translation('down')).pack(side=LEFT)
+
+        Button(directions_container, text="→",
+               command=lambda: self.handle_translation('right')).pack(side=LEFT)
+
+        Button(zoom_container, text="+",
+               command=lambda: self.handle_zoom(1)).pack()
+
+        Button(zoom_container, text="-",
+               command=lambda: self.handle_zoom(-1)).pack()
+
+        Button(object_actions_container, text="Translação",
+               command=lambda: self.handle_action_click("Translação")).pack(side=LEFT)
+
+        Button(object_actions_container, text="Rotação",
+               command=lambda: self.handle_action_click("Rotação")).pack(side=LEFT)
+
+        Button(object_actions_container, text="Escala",
+               command=lambda: self.handle_action_click("Escala")).pack(side=LEFT)
+
+        Button(rotation_container, text="↶",
+               command=lambda: self.handle_window_rotation('left')).pack(side=LEFT)
+
+        Button(rotation_container, text="↷",
+               command=lambda: self.handle_window_rotation('right')).pack(side=LEFT)
+
+        self.log = Listbox(function_container, width=35)
+        self.log.pack(fill=Y, side=BOTTOM)
+
+    def start_app(self):
+        self.root.mainloop()
+
+    def transform_coords(self, coords):
+        aux = []
+        for coord in coords:
+            aux.append(self.get_viewport_coords(coord))
+        return aux
+
+    def update_all_points_display_file(self):
+        self.normalize_display_file()
+        self.display_file_show = []
+        # self.display_file_normalized = deepcopy(self.display_file)
+        normalized_objects = deepcopy(self.display_file_normalized)
+        for normalized_object in normalized_objects:
+            normalized_object.coords = self.transform_coords(
+                normalized_object.coords)
+            self.display_file_show.append(normalized_object)
+
+    def update_display_file(self, index, coords):
+        self.display_file_normalized[index].coords = self.transform_coords(
+            coords)
+        self.display_file_show = self.display_file_normalized
+
+    def zoom(self, signal):
+        zoom_value = 0.9 if signal > 0 else 1.1
+        self.window.center_scale(zoom_value, zoom_value)
+        self.log.insert(0, "zoomed in" if signal > 0 else "zoomed out")
+        self.draw()
+
+
+

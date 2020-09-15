@@ -71,7 +71,6 @@ class CalculationMatrix(Matrix):
             super().__init__(
                 3, 3, [[coseno, -seno, 0], [seno, coseno, 0], [0, 0, 1]])
 
-
 class GraphicObject:
 
     def __init__(self, name, coords, color):
@@ -80,13 +79,23 @@ class GraphicObject:
         self.color = color
         self.get_center()
 
-    def translate(self, Cx, Cy):
-        aux = []
-        for coord in self.coords:
-            result = CalculationMatrix('c', coord.to_list()) * \
-                CalculationMatrix('t', [Cx, Cy])
-            aux.append(Coords(*result.matrix[0]))
-        self.coords = aux
+    def center_scale(self, Sx, Sy):
+        self.get_center()
+
+        self.translate(-self.center.x, -self.center.y)
+        self.scale(Sx, Sy)
+        self.translate(self.center.x, self.center.y)
+
+    def get_center(self):
+        center_x = 0
+        center_y = 0
+
+        for coord in self.coords:  # ARRAY POS PAR = X / ARRAY POS IMPAR = Y
+            center_x += coord.x
+            center_y += coord.y
+
+        self.center = Coords(center_x / (len(self.coords)),
+                             center_y / (len(self.coords)))
 
     def scale(self, Sx, Sy):
         aux = []
@@ -96,12 +105,9 @@ class GraphicObject:
             aux.append(Coords(*result.matrix[0]))
         self.coords = aux
 
-    def center_scale(self, Sx, Sy):
+    def return_center(self):
         self.get_center()
-
-        self.translate(-self.center.x, -self.center.y)
-        self.scale(Sx, Sy)
-        self.translate(self.center.x, self.center.y)
+        return self.center
 
     def rotate(self, Dx, Dy, teta):
         self.translate(-Dx, -Dy)
@@ -115,17 +121,10 @@ class GraphicObject:
 
         self.translate(Dx, Dy)
 
-    def get_center(self):
-        center_x = 0
-        center_y = 0
-
-        for coord in self.coords:  # ARRAY POS PAR = X / ARRAY POS IMPAR = Y
-            center_x += coord.x
-            center_y += coord.y
-
-        self.center = Coords(center_x / (len(self.coords)),
-                             center_y / (len(self.coords)))
-
-    def return_center(self):
-        self.get_center()
-        return self.center
+    def translate(self, Cx, Cy):
+        aux = []
+        for coord in self.coords:
+            result = CalculationMatrix('c', coord.to_list()) * \
+                CalculationMatrix('t', [Cx, Cy])
+            aux.append(Coords(*result.matrix[0]))
+        self.coords = aux
