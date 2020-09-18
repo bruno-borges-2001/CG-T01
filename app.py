@@ -110,9 +110,6 @@ class App:
             self.listbox.insert(END, new_object.name)
             self.log.insert(0, "Objected " + new_object.name + " added")
             self.display_file.append(new_object)
-            # self.display_file_normalized.append(GraphicObject(
-            #     self.object_name.get(), self.tranform_coords(self.new_object_coords), COLORS[self.color_combobox.get()]))
-            # self.display_file_show = self.display_file_normalized
             self.draw()
             self.add_object_screen.destroy()
 
@@ -148,6 +145,17 @@ class App:
         ]
 
         self.draw()
+
+    def clipping(self):
+        self.display_file_show = []
+        for normalized_object in self.display_file_normalized:
+            if (len(normalized_object.coords) == 1):
+                self.point_clipping(normalized_object)
+            elif (len(normalized_object.coords) == 2):
+                self.line_clipping(normalized_object)
+            else:
+                self.polygon_clipping(normalized_object)
+         
 
     def draw(self):
         self.update_all_points_display_file()
@@ -272,6 +280,84 @@ class App:
         else:
             self.zoom(signal)
 
+    def line_clipping(self, graphic_object):
+        clipped_line = GraphicObject(graphic_object.name, graphic_object.coords, graphic_object.color)
+
+        min_wcoords = self.normal_window.coords[0]
+        max_wcoords = self.normal_window.coords[2]
+        
+        xl = min_wcoords.x
+        xr = max_wcoords.x
+        yb = min_wcoords.y
+        yt = max_wcoords.y
+        # setting region codes of the coordinates of each point
+        points_region_codes = []
+        for coord in graphic_object.coords:
+            region_code = int('0000',2)
+            if (coord.x < xl):
+                region_code = region_code | int('0001',2)
+            if (coord.x > xr):
+                region_code = region_code | int('0010',2)
+            if (coord.y < yb):
+                region_code = region_code | int('0100',2)
+            if (coord.y > yt):
+                region_code = region_code | int('1000',2)
+            points_region_codes.append(region_code)
+
+        # checking position of points
+        rc1 = points_region_codes[0]
+        rc2 = points_region_codes[1]
+        if (rc1 == 0 and rc2 == 0):
+            self.display_file_show.append(graphic_object)
+        elif (rc1 & rc2 != 0):
+            pass
+        elif (rc1 & rc2 == 0 and rc1 != rc2):
+            p1 = graphic_object.coords[0]
+            p2 = graphic_object.coords[1]
+
+            m = (p2.y - p1.y) / (p2.x - p1.x)
+
+            # checks if the line intersects the window
+            intersects = True
+            rc_intersects = False
+            for i in range(len(points_region_codes)):
+                if (intersects):
+                    rc = points_region_codes[i]
+                    if (rc & int('0001',2) == int('0001',2)): # left intersection
+                        y = m * (xl - p1.x) + p1.y
+                        if (y >= yb and y <= yt):
+                            rc_intersects = True
+                            clipped_line.coords[i].x = xl
+                            clipped_line.coords[i].y = y
+                        else: 
+                            intersects = rc_intersects
+                    if (rc & int('0010',2) == int('0010',2)): # right intersection
+                        y = m * (xr - p1.x) + p1.y
+                        if (y >= yb and y <= yt):
+                            rc_intersects = True
+                            clipped_line.coords[i].x = xr
+                            clipped_line.coords[i].y = y
+                        else: 
+                            intersects = rc_intersects
+                    if (rc & int('0100',2) == int('0100',2)): # bottom intersection
+                        x = p1.x + 1/m + (yb - p1.y)
+                        if (x >= xl and x <= xr):
+                            rc_intersects = True
+                            clipped_line.coords[i].x = x
+                            clipped_line.coords[i].y = yb
+                        else: 
+                            intersects = rc_intersects
+                    if (rc & int('1000',2) == int('1000',2)): # top intersection
+                        x = p1.x + 1/m + (yt - p1.y)
+                        if (x >= xl and x <= xr):
+                            rc_intersects = True
+                            clipped_line.coords[i].x = x
+                            clipped_line.coords[i].y = yt
+                        else: 
+                            intersects = rc_intersects
+            if (intersects):
+                self.display_file_show.append(clipped_line)
+
     def move_window(self, direction):
         Cx = 0
         Cy = 0
@@ -299,6 +385,20 @@ class App:
                 aux.append(Coords(*result.matrix[0]))
             graphic_object.coords = aux
             self.display_file_normalized.append(graphic_object)
+
+    def point_clipping(self, graphic_object):
+        min_wcoords = self.normal_window.coords[0]
+        max_wcoords = self.normal_window.coords[2]
+        if (graphic_object.coords[0].x >= min_wcoords.x and graphic_object.coords[0].x <= max_wcoords.x):
+            if (graphic_object.coords[0].y >= min_wcoords.y and graphic_object.coords[0].y <= max_wcoords.y):
+                self.display_file_show.append(graphic_object)
+
+    def polygon_clipping(self, graphic_object):
+        clipped_polygon = GraphicObject(graphic_object.name, graphic_object.coords, graphic_object.color)
+
+        min_wcoords = self.normal_window.coords[0]
+        max_wcoords = self.normal_window.coords[2]
+        pass
 
     def remove_object(self):
         self.log.insert(
@@ -408,24 +508,13 @@ class App:
 
     def update_all_points_display_file(self):
         self.normalize_display_file()
-        self.display_file_show = []
-        # self.display_file_normalized = deepcopy(self.display_file)
-        normalized_objects = deepcopy(self.display_file_normalized)
-        for normalized_object in normalized_objects:
+        self.clipping()
+        for normalized_object in self.display_file_show:
             normalized_object.coords = self.transform_coords(
                 normalized_object.coords)
-            self.display_file_show.append(normalized_object)
-
-    def update_display_file(self, index, coords):
-        self.display_file_normalized[index].coords = self.transform_coords(
-            coords)
-        self.display_file_show = self.display_file_normalized
 
     def zoom(self, signal):
         zoom_value = 0.9 if signal > 0 else 1.1
         self.window.center_scale(zoom_value, zoom_value)
         self.log.insert(0, "zoomed in" if signal > 0 else "zoomed out")
         self.draw()
-
-
-
