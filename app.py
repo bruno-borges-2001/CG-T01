@@ -36,8 +36,10 @@ class App:
         self.padding = 10
 
         self.window = GraphicObject("Window", [Coords(0, 0)], COLORS["RED"])
-        self.normal_window = GraphicObject("NomalWindow", [Coords(-1, -1), Coords(1, -1), Coords(1, 1), Coords(-1, 1)], COLORS["RED"])
-        self.viewport = GraphicObject("Viewport", [Coords(0,0)], COLORS["RED"])
+        self.normal_window = GraphicObject("NomalWindow", [
+                                           Coords(-1, -1), Coords(1, -1), Coords(1, 1), Coords(-1, 1)], COLORS["RED"])
+        self.viewport = GraphicObject(
+            "Viewport", [Coords(0, 0)], COLORS["RED"])
 
         self.window_rotation_angle = 0
 
@@ -131,17 +133,17 @@ class App:
         YWMAX = self.height
 
         self.window.coords = [
-          Coords(XWMIN, YWMIN),
-          Coords(XWMIN, YWMAX),
-          Coords(XWMAX, YWMAX),
-          Coords(XWMAX, YWMIN)
+            Coords(XWMIN, YWMIN),
+            Coords(XWMIN, YWMAX),
+            Coords(XWMAX, YWMAX),
+            Coords(XWMAX, YWMIN)
         ]
 
         self.viewport.coords = [
-          Coords(XWMIN + self.padding, YWMIN + self.padding),
-          Coords(XWMIN + self.padding, YWMAX - self.padding),
-          Coords(XWMAX - self.padding, YWMAX - self.padding),
-          Coords(XWMAX - self.padding, YWMIN + self.padding)
+            Coords(XWMIN + self.padding, YWMIN + self.padding),
+            Coords(XWMIN + self.padding, YWMAX - self.padding),
+            Coords(XWMAX - self.padding, YWMAX - self.padding),
+            Coords(XWMAX - self.padding, YWMIN + self.padding)
         ]
 
         self.draw()
@@ -155,7 +157,6 @@ class App:
                 self.line_clipping(normalized_object)
             else:
                 self.polygon_clipping(normalized_object)
-         
 
     def draw(self):
         self.update_all_points_display_file()
@@ -166,20 +167,25 @@ class App:
         self.canvas.create_polygon(
             aux, tags="viewport", outline=self.viewport.color, fill="")
         for obj in self.display_file_show:
-            if (len(obj.coords) > 2):
-                coords = []
-                for coord in obj.coords:
-                    coords += [coord.x + self.padding, coord.y + self.padding]
-                self.canvas.create_polygon(
-                    coords, tags=obj.name, outline=obj.color, fill="")
-            elif (len(obj.coords) == 2):
-                coords = []
-                for coord in obj.coords:
-                    coords += [coord.x + self.padding, coord.y + self.padding]
-                self.canvas.create_line(coords, tags=obj.name, fill=obj.color)
-            else:
-                self.canvas.create_oval(
-                    obj.coords[0].x - 1 + self.padding, obj.coords[0].y - 1 + self.padding, obj.coords[0].x + 1 + self.padding, obj.coords[0].y + 1 + self.padding, fill=obj.color)
+            for coords in obj.clipped:
+                if (len(coords) > 2):
+                    aux = []
+                    for coord in coords:
+                        aux += [coord.x + self.padding,
+                                coord.y + self.padding]
+                    self.canvas.create_polygon(
+                        aux, tags=obj.name, outline=obj.color, fill="")
+                elif (len(coords) == 2):
+                    aux = []
+                    for coord in coords:
+                        aux += [coord.x + self.padding,
+                                coord.y + self.padding]
+                    self.canvas.create_line(
+                        aux, tags=obj.name, fill=obj.color)
+                elif (len(coords) == 1):
+                    self.canvas.create_oval(
+                        coords[0].x - 1 + self.padding, coords[0].y - 1 + self.padding, coords[0].x + 1 + self.padding, coords[0].y + 1 + self.padding, fill=obj.color)
+        self.canvas.tag_raise("viewport")
 
     def generate_scn_matrix(self):
         window_center = self.window.return_center()
@@ -194,8 +200,7 @@ class App:
         return scn_matrix
 
     def get_canvas_center(self):
-        return Coords(self.width / 2,
-                      self.height / 2)
+        return Coords(self.width / 2, self.height / 2)
 
     def get_window_height(self):
         return self.window.coords[2].y - self.window.coords[0].y
@@ -281,11 +286,12 @@ class App:
             self.zoom(signal)
 
     def line_clipping(self, graphic_object):
-        clipped_line = GraphicObject(graphic_object.name, graphic_object.coords, graphic_object.color)
+        clipped_line = GraphicObject(
+            graphic_object.name, graphic_object.coords, graphic_object.color)
 
         min_wcoords = self.normal_window.coords[0]
         max_wcoords = self.normal_window.coords[2]
-        
+
         xl = min_wcoords.x
         xr = max_wcoords.x
         yb = min_wcoords.y
@@ -293,15 +299,15 @@ class App:
         # setting region codes of the coordinates of each point
         points_region_codes = []
         for coord in graphic_object.coords:
-            region_code = int('0000',2)
+            region_code = int('0000', 2)
             if (coord.x < xl):
-                region_code = region_code | int('0001',2)
+                region_code = region_code | int('0001', 2)
             if (coord.x > xr):
-                region_code = region_code | int('0010',2)
+                region_code = region_code | int('0010', 2)
             if (coord.y < yb):
-                region_code = region_code | int('0100',2)
+                region_code = region_code | int('0100', 2)
             if (coord.y > yt):
-                region_code = region_code | int('1000',2)
+                region_code = region_code | int('1000', 2)
             points_region_codes.append(region_code)
 
         # checking position of points
@@ -323,37 +329,37 @@ class App:
             for i in range(len(points_region_codes)):
                 if (intersects):
                     rc = points_region_codes[i]
-                    if (rc & int('0001',2) == int('0001',2)): # left intersection
+                    if (rc & int('0001', 2) == int('0001', 2)):  # left intersection
                         y = m * (xl - p1.x) + p1.y
                         if (y >= yb and y <= yt):
                             rc_intersects = True
                             clipped_line.coords[i].x = xl
                             clipped_line.coords[i].y = y
-                        else: 
+                        else:
                             intersects = rc_intersects
-                    if (rc & int('0010',2) == int('0010',2)): # right intersection
+                    if (rc & int('0010', 2) == int('0010', 2)):  # right intersection
                         y = m * (xr - p1.x) + p1.y
                         if (y >= yb and y <= yt):
                             rc_intersects = True
                             clipped_line.coords[i].x = xr
                             clipped_line.coords[i].y = y
-                        else: 
+                        else:
                             intersects = rc_intersects
-                    if (rc & int('0100',2) == int('0100',2)): # bottom intersection
-                        x = p1.x + 1/m + (yb - p1.y)
+                    if (rc & int('0100', 2) == int('0100', 2)):  # bottom intersection
+                        x = p1.x + (1/m) * (yb - p1.y)
                         if (x >= xl and x <= xr):
                             rc_intersects = True
                             clipped_line.coords[i].x = x
                             clipped_line.coords[i].y = yb
-                        else: 
+                        else:
                             intersects = rc_intersects
-                    if (rc & int('1000',2) == int('1000',2)): # top intersection
-                        x = p1.x + 1/m + (yt - p1.y)
+                    if (rc & int('1000', 2) == int('1000', 2)):  # top intersection
+                        x = p1.x + (1/m) * (yt - p1.y)
                         if (x >= xl and x <= xr):
                             rc_intersects = True
                             clipped_line.coords[i].x = x
                             clipped_line.coords[i].y = yt
-                        else: 
+                        else:
                             intersects = rc_intersects
             if (intersects):
                 self.display_file_show.append(clipped_line)
@@ -362,13 +368,13 @@ class App:
         Cx = 0
         Cy = 0
         if (direction == 'up'):
-          Cy = self.get_window_height() * 0.1
+            Cy = self.get_window_height() * 0.1
         elif (direction == 'down'):
-          Cy = -self.get_window_height() * 0.1
+            Cy = -self.get_window_height() * 0.1
         elif (direction == "left"):
-          Cx = -self.get_window_height() * 0.1
+            Cx = -self.get_window_height() * 0.1
         elif (direction == 'right'):
-          Cx = self.get_window_height() * 0.1
+            Cx = self.get_window_height() * 0.1
         self.window.translate(Cx, Cy)
         self.log.insert(0, "Window moved " + direction)
         self.draw()
@@ -384,6 +390,7 @@ class App:
                 result = CalculationMatrix('c', coord.to_list()) * scn_matrix
                 aux.append(Coords(*result.matrix[0]))
             graphic_object.coords = aux
+            graphic_object.normalized = True
             self.display_file_normalized.append(graphic_object)
 
     def point_clipping(self, graphic_object):
@@ -394,7 +401,8 @@ class App:
                 self.display_file_show.append(graphic_object)
 
     def polygon_clipping(self, graphic_object):
-        clipped_polygon = GraphicObject(graphic_object.name, graphic_object.coords, graphic_object.color)
+        clipped_polygon = GraphicObject(
+            graphic_object.name, graphic_object.coords, graphic_object.color)
 
         min_wcoords = self.normal_window.coords[0]
         max_wcoords = self.normal_window.coords[2]
@@ -508,10 +516,25 @@ class App:
 
     def update_all_points_display_file(self):
         self.normalize_display_file()
-        self.clipping()
-        for normalized_object in self.display_file_show:
-            normalized_object.coords = self.transform_coords(
-                normalized_object.coords)
+        # self.clipping()
+        self.display_file_show = []
+        for normalized_object in self.display_file_normalized:
+            # for normalized_object in self.display_file_show:
+            aux = deepcopy(normalized_object)
+            if (len(aux.coords) == 1):
+                aux.clip_point()
+            elif (len(aux.coords) == 2):
+                aux.clip_line()
+            elif (len(aux.coords) > 2):
+                aux.clip_polygon()
+            clipped_aux = []
+            for obj in aux.clipped:
+                clipped_aux.append(self.transform_coords(obj))
+            aux.clipped = clipped_aux
+            self.display_file_show.append(aux)
+
+            # normalized_object.coords = self.transform_coords(
+            #     normalized_object.coords)
 
     def zoom(self, signal):
         zoom_value = 0.9 if signal > 0 else 1.1

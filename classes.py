@@ -1,9 +1,10 @@
 from math import *
+from copy import deepcopy
 
 
 class Coords:
 
-    def __init__(self, x, y, z=None):
+    def __init__(self, x, y, z=None, artificial=False):
         self.x = x
         self.y = y
         if not z:
@@ -11,11 +12,16 @@ class Coords:
         else:
             self.z = z
 
+        self.artificial = artificial
+
     def to_list(self):
         return [self.x, self.y, self.z]
 
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y and self.z == other.z
+
     def __str__(self):
-        return "(" + str(self.x) + "," + str(self.y) + "," + str(self.z) + ")"
+        return "(" + str(round(self.x, 2)) + "," + str(round(self.y, 2)) + ")"
 
 
 class Matrix:
@@ -71,13 +77,206 @@ class CalculationMatrix(Matrix):
             super().__init__(
                 3, 3, [[coseno, -seno, 0], [seno, coseno, 0], [0, 0, 1]])
 
+
 class GraphicObject:
 
-    def __init__(self, name, coords, color):
+    def __init__(self, name, coords, color, normalized=False):
         self.name = name
         self.coords = coords
         self.color = color
+
+        self.normalized = normalized
+
+        self.clipped = []
+
+        if (len(coords) == 1):
+            self.clip_point()
+        elif (len(coords) == 2):
+            self.clip_line()
+        elif (len(coords) > 2):
+            self.clip_polygon()
+
         self.get_center()
+
+    def calculate_intersection(self, p1, p2, prc):
+        intersects = True
+        rc_intersects = False
+        new_coords = deepcopy([p1, p2])
+        for i in range(2):
+            if (intersects):
+                rc = prc[i]
+                if (rc & int('0001', 2) == int('0001', 2)):  # left intersection
+                    m = (p2.y - p1.y) / (p2.x - p1.x)
+                    y = m * (-1 - p1.x) + p1.y
+                    if (y >= -1 and y <= 1):
+                        rc_intersects = True
+                        new_coords[i].x = -1
+                        new_coords[i].y = y
+                    else:
+                        intersects = rc_intersects
+                if (rc & int('0010', 2) == int('0010', 2)):  # right intersection
+                    m = (p2.y - p1.y) / (p2.x - p1.x)
+                    y = m * (1 - p1.x) + p1.y
+                    if (y >= -1 and y <= 1):
+                        rc_intersects = True
+                        new_coords[i].x = 1
+                        new_coords[i].y = y
+                    else:
+                        intersects = rc_intersects
+                if (rc & int('0100', 2) == int('0100', 2)):  # bottom intersection
+                    m = (p2.x - p1.x) / (p2.y - p1.y)
+                    x = p1.x + m * (-1 - p1.y)
+                    if (x >= -1 and x <= 1):
+                        rc_intersects = True
+                        new_coords[i].x = x
+                        new_coords[i].y = -1
+                    else:
+                        intersects = rc_intersects
+                if (rc & int('1000', 2) == int('1000', 2)):  # top intersection
+                    m = (p2.x - p1.x) / (p2.y - p1.y)
+                    x = p1.x + m * (1 - p1.y)
+                    if (x >= -1 and x <= 1):
+                        rc_intersects = True
+                        new_coords[i].x = x
+                        new_coords[i].y = 1
+                    else:
+                        intersects = rc_intersects
+        intersects = rc_intersects
+        return (intersects, new_coords)
+
+    def clip_point(self):
+        if (not self.normalized):
+            pass
+        self.clipped = []
+        if (self.inside(self.coords[0])):
+            self.clipped.append(self.coords)
+
+    def clip_line(self, coords=False, return_value=False):
+        if (not self.normalized):
+            pass
+        if (not coords):
+            self.clipped = []
+            coords = self.coords
+        # checking position of points
+        prc = self.set_region_codes(coords)
+        if (prc[0] == 0 and prc[1] == 0):
+            if (return_value):
+                return coords
+            else:
+                self.clipped.append(coords)
+        elif (prc[0] & prc[1] != 0):
+            if (return_value):
+                return []
+            else:
+                pass
+        elif (prc[0] & prc[1] == 0 and prc[0] != prc[1]):
+            [intersects, new_coords] = self.calculate_intersection(
+                coords[0], coords[1], prc)
+            if (return_value):
+                return new_coords if intersects else []
+            else:
+                if (intersects):
+                    self.clipped.append(new_coords)
+
+    def clip_polygon(self):
+        if (not self.normalized):
+            return
+        self.clipped = []
+        i = 0
+        polygon = deepcopy(self.coords)
+        window = []
+        entrantes = []
+        temp = []
+        top = [Coords(-1, 1)]
+        right = [Coords(1, 1)]
+        bottom = [Coords(1, -1)]
+        left = [Coords(-1, -1)]
+        while i < len(polygon):
+            p1 = deepcopy(polygon[i])
+            p2 = deepcopy(polygon[(i+1) % len(polygon)])
+            new_coords = self.clip_line([p1, p2], True)
+
+            for coord in new_coords:
+                coord.artificial = True
+                if (new_coords.index(coord) == 0 and not self.inside(p1)):
+                    entrantes.append(coord)
+                # polygon insert
+                if (coord not in polygon):
+                    polygon.insert(i+1, coord)
+                    i += 1
+                #   window insert
+                inserted = False
+                if (coord.y == 1):
+                    for j in range(1, len(top)):
+                        if (coord.x == top[j].x):
+                            inserted = True
+                            break
+                        if (coord.x < top[j].x):
+                            top.insert(j, coord)
+                            inserted = True
+                            break
+                    if (not inserted and abs(coord.x) != 1):
+                        top.append(coord)
+                if (coord.x == 1):
+                    for j in range(1, len(right)):
+                        if (coord.y == right[j].y):
+                            inserted = True
+                            break
+                        if (coord.y > right[j].y):
+                            right.insert(j, coord)
+                            inserted = True
+                            break
+                    if (not inserted and abs(coord.y) != 1):
+                        right.append(coord)
+                if (coord.y == -1):
+                    for j in range(1, len(bottom)):
+                        if (coord.x == bottom[j].x):
+                            inserted = True
+                            break
+                        if (coord.x > bottom[j].x):
+                            bottom.insert(j, coord)
+                            inserted = True
+                            break
+                    if (not inserted and abs(coord.x) != 1):
+                        bottom.append(coord)
+                if (coord.x == -1):
+                    for j in range(1, len(left)):
+                        if (coord.y == left[j].y):
+                            inserted = True
+                            break
+                        if (coord.y < left[j].y):
+                            left.insert(j, coord)
+                            inserted = True
+                            break
+                    if (not inserted and abs(coord.y) != 1):
+                        left.append(coord)
+            i += 1
+        window = top + right + bottom + left
+
+        if (len(entrantes) > 0):
+            temp.append([])
+            for e in entrantes:
+                if (e in polygon):
+                    i = (polygon.index(e) + 1) % len(polygon)
+                    temp[-1].append(e)
+                    if (polygon[i-1].artificial):
+                        while not polygon[i].artificial:
+                            if (self.inside(polygon[i])):
+                                temp[-1].append(polygon[i])
+                            i = (i+1) % len(polygon)
+                if (e not in polygon or polygon[i] != e):
+                    aux = e if e not in polygon else polygon[i]
+                    temp[-1].append(aux)
+                    i = (window.index(aux)+1) % len(window)
+                    while not window[i].artificial:
+                        temp[-1].append(window[i])
+                        i = (i+1) % len(window)
+                    temp[-1].append(window[i])
+                    if (window[i] == e):
+                        temp.append([])
+            self.clipped = temp
+        else:
+            self.clipped = [list(filter(lambda el: self.inside(el), polygon))]
 
     def center_scale(self, Sx, Sy):
         self.get_center()
@@ -97,6 +296,9 @@ class GraphicObject:
         self.center = Coords(center_x / (len(self.coords)),
                              center_y / (len(self.coords)))
 
+    def inside(self, coord):
+        return abs(coord.x) <= 1 and abs(coord.y) <= 1
+
     def scale(self, Sx, Sy):
         aux = []
         for coord in self.coords:
@@ -104,6 +306,22 @@ class GraphicObject:
                 CalculationMatrix('s', [Sx, Sy])
             aux.append(Coords(*result.matrix[0]))
         self.coords = aux
+
+    def set_region_codes(self, coords):
+        points_region_codes = []
+
+        for coord in coords:
+            region_code = int('0000', 2)
+            if (coord.x < -1):
+                region_code = region_code | int('0001', 2)
+            if (coord.x > 1):
+                region_code = region_code | int('0010', 2)
+            if (coord.y < -1):
+                region_code = region_code | int('0100', 2)
+            if (coord.y > 1):
+                region_code = region_code | int('1000', 2)
+            points_region_codes.append(region_code)
+        return points_region_codes
 
     def return_center(self):
         self.get_center()
