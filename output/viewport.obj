@@ -1,0 +1,10 @@
+mtllib libraries.mtl
+
+v 1235.41 -791.9 0.0
+v -715.22 2446.69 0.0
+v 6675.75 3365.21 0.0
+o objeto
+usemtl BLUE
+f -3 -2 -1
+
+

@@ -80,7 +80,7 @@ class CalculationMatrix(Matrix):
 
 class GraphicObject:
 
-    def __init__(self, name, coords, color, normalized=False):
+    def __init__(self, name, coords, color, normalized=False, typeF=None):
         self.name = name
         self.coords = coords
         self.color = color
@@ -90,10 +90,13 @@ class GraphicObject:
         self.clipped = []
 
         if (len(coords) == 1):
+            self.type = "point"
             self.clip_point()
         elif (len(coords) == 2):
+            self.type = "line"
             self.clip_line()
         elif (len(coords) > 2):
+            self.type = typeF
             self.clip_polygon()
 
         self.get_center()
