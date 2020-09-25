@@ -2,7 +2,7 @@
 
 from tkinter import *
 from tkinter import ttk
-from classes import GraphicObject, Coords, Matrix, CalculationMatrix
+from classes import GraphicObject, Coord, Matrix, CalculationMatrix
 from popup import Popup
 from copy import deepcopy
 
@@ -39,11 +39,11 @@ class App:
 
         self.padding = 10
 
-        self.window = GraphicObject("Window", [Coords(0, 0)], COLORS["RED"])
+        self.window = GraphicObject("Window", [Coord(0, 0)], COLORS["RED"])
         self.normal_window = GraphicObject("NomalWindow", [
-                                           Coords(-1, -1), Coords(1, -1), Coords(1, 1), Coords(-1, 1)], COLORS["RED"])
+                                           Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)], COLORS["RED"])
         self.viewport = GraphicObject(
-            "Viewport", [Coords(0, 0)], COLORS["RED"])
+            "Viewport", [Coord(0, 0)], COLORS["RED"])
 
         self.window_rotation_angle = 0
 
@@ -56,78 +56,112 @@ class App:
         self.canvas_container.update_idletasks()
         self.canvas.update_idletasks()
 
-    def add_object(self):
+    def add_object(self, mode = None):
         self.new_object_coords = []
-
+        self.entry_point_destroyed = False
+        add_point_text = "Adicionar ponto"
         self.add_object_screen = Toplevel(self.root)
-        self.add_object_screen.title("Adicionar objeto")
-        self.add_object_screen.geometry("300x400")
+        if (mode == "curve"):
+            self.add_object_screen.title("Adicionar curva")
+            self.add_object_screen.geometry("500x500")
+            add_point_text = "Adicionar pontos"
+        else:
+            self.add_object_screen.title("Adicionar objeto")
+            self.add_object_screen.geometry("300x400")
 
-        self.name_object_container = Frame(self.add_object_screen)
-        self.name_object_container.pack(side=TOP)
+        name_object_container = Frame(self.add_object_screen)
+        name_object_container.pack(side=TOP)
 
         self.object_name = StringVar()
-        Label(self.name_object_container, text="Nome do objeto:").pack(side=LEFT)
-        Entry(self.name_object_container,
+        Label(name_object_container, text="Nome do objeto:").pack(side=LEFT)
+        Entry(name_object_container,
               textvariable=self.object_name).pack(side=LEFT)
 
-        self.color_object_container = Frame(
+        color_object_container = Frame(
             self.add_object_screen)
-        self.color_object_container.pack(side=TOP)
+        color_object_container.pack(side=TOP)
 
-        Label(self.color_object_container,
+        Label(color_object_container,
               text="Cor do objeto:").pack(side=LEFT)
 
         self.color_combobox = ttk.Combobox(
-            self.color_object_container, values=list(COLORS.keys()))
+            color_object_container, values=list(COLORS.keys()))
         self.color_combobox.pack(side=LEFT)
         self.color_combobox.current(0)
 
         entry_container = Frame(self.add_object_screen)
         entry_container.pack(side=TOP, pady=5)
 
-        entry_x_container = Frame(entry_container)
-        entry_x_container.pack(side=TOP)
+        if (mode == "curve"):
+            self.points_x = []
+            self.points_y = []
+            for i in range(3):
+                self.generate_entry_points(entry_container)
+            self.generate_entry_points(entry_container,"4points")
+        else:
+            entry_x_container = Frame(entry_container)
+            entry_x_container.pack(side=TOP)
 
-        entry_y_container = Frame(entry_container)
-        entry_y_container.pack(side=TOP)
-        self.buttons_container = Frame(self.add_object_screen)
-        self.new_object_listbox = Listbox(self.buttons_container)
+            entry_y_container = Frame(entry_container)
+            entry_y_container.pack(side=TOP)
 
-        self.point_x = IntVar()
-        self.point_y = IntVar()
-        Label(entry_x_container, text="X").pack(side=LEFT)
-        Entry(entry_x_container, textvariable=self.point_x).pack(side=LEFT)
-        Label(entry_y_container, text="Y").pack(side=LEFT)
-        Entry(entry_y_container, textvariable=self.point_y).pack(side=LEFT)
+            self.point_x = IntVar()
+            self.point_y = IntVar()
+            Label(entry_x_container, text="X").pack(side=LEFT)
+            Entry(entry_x_container, textvariable=self.point_x).pack(side=LEFT)
+            Label(entry_y_container, text="Y").pack(side=LEFT)
+            Entry(entry_y_container, textvariable=self.point_y).pack(side=LEFT)
 
-        self.buttons_container.pack(side=TOP)
+        buttons_container = Frame(self.add_object_screen)
+        self.new_object_listbox = Listbox(buttons_container)
 
-        Button(self.buttons_container, text="Adicionar ponto",
-               command=self.add_point).pack()
+        buttons_container.pack(side=TOP)
+
+        Button(buttons_container, text=add_point_text,
+            command=lambda: self.add_point(mode)).pack()
         self.new_object_listbox.pack(pady=5)
-        Button(self.buttons_container, text="Adicionar objeto",
-               command=self.add_object_on_screen).pack()
+        Button(buttons_container, text="Adicionar objeto",
+            command=lambda: self.add_object_on_screen(mode)).pack()
 
-    def add_object_on_screen(self):
+    def add_object_on_screen(self, mode):
         if (len(self.object_name.get()) > 0 and len(self.new_object_coords) > 0):
-            # alterar para checar na interface se quer fazer poligono, linha ou curva
-            typeF = "polygon" if len(self.new_object_coords) >= 3 else None
-            new_object = GraphicObject(
-                self.object_name.get(), self.new_object_coords, COLORS[self.color_combobox.get()], False, typeF)
+            if (len(self.new_object_coords) >= 3):
+                if (mode == "curve"):
+                    typeF = "curve"
+                else:
+                    typeF = "polygon"
+            new_object = GraphicObject(self.object_name.get(), self.new_object_coords, COLORS[self.color_combobox.get()], False, typeF)
             self.listbox.insert(END, new_object.name)
             self.log.insert(0, "Objected " + new_object.name + " added")
             self.display_file.append(new_object)
             self.draw()
             self.add_object_screen.destroy()
 
-    def add_point(self):
-        x = self.point_x.get()
-        y = self.point_y.get()
-        self.new_object_coords.append(Coords(x, y))
-        self.new_object_listbox.insert(END, "(" + str(x) + "," + str(y) + ")")
-        self.point_x.set(0)
-        self.point_y.set(0)
+    def add_point(self, mode):
+        if (mode == "curve"):
+            for i in range(len(self.points_x)):
+                x = self.points_x[i].get()
+                y = self.points_y[i].get()
+                self.new_object_coords.append(Coord(x, y))
+                self.new_object_listbox.insert(END, "(" + str(x) + "," + str(y) + ")")
+                self.points_x[i].set(0)
+                self.points_y[i].set(0)
+            if not (self.entry_point_destroyed):
+                self.entry_point_destroyed = True
+                index = len(self.points_x) - 1
+                self.points_x.pop(index)
+                self.points_y.pop(index)
+                self.label_x.destroy()
+                self.entry_x.destroy()
+                self.label_y.destroy()
+                self.entry_y.destroy()
+        else:
+            x = self.point_x.get()
+            y = self.point_y.get()
+            self.new_object_coords.append(Coord(x, y))
+            self.new_object_listbox.insert(END, "(" + str(x) + "," + str(y) + ")")
+            self.point_x.set(0)
+            self.point_y.set(0)
 
     def check(self, event):
         self.height = self.canvas.winfo_height()
@@ -139,30 +173,20 @@ class App:
         YWMAX = self.height
 
         self.window.coords = [
-            Coords(XWMIN, YWMIN),
-            Coords(XWMIN, YWMAX),
-            Coords(XWMAX, YWMAX),
-            Coords(XWMAX, YWMIN)
+            Coord(XWMIN, YWMIN),
+            Coord(XWMIN, YWMAX),
+            Coord(XWMAX, YWMAX),
+            Coord(XWMAX, YWMIN)
         ]
 
         self.viewport.coords = [
-            Coords(XWMIN + self.padding, YWMIN + self.padding),
-            Coords(XWMIN + self.padding, YWMAX - self.padding),
-            Coords(XWMAX - self.padding, YWMAX - self.padding),
-            Coords(XWMAX - self.padding, YWMIN + self.padding)
+            Coord(XWMIN + self.padding, YWMIN + self.padding),
+            Coord(XWMIN + self.padding, YWMAX - self.padding),
+            Coord(XWMAX - self.padding, YWMAX - self.padding),
+            Coord(XWMAX - self.padding, YWMIN + self.padding)
         ]
 
         self.draw()
-
-    def clipping(self):
-        self.display_file_show = []
-        for normalized_object in self.display_file_normalized:
-            if (len(normalized_object.coords) == 1):
-                self.point_clipping(normalized_object)
-            elif (len(normalized_object.coords) == 2):
-                self.line_clipping(normalized_object)
-            else:
-                self.polygon_clipping(normalized_object)
 
     def draw(self):
         self.update_all_points_display_file()
@@ -206,8 +230,41 @@ class App:
         scn_matrix = translation_matrix * rotation_matrix * scale_matrix
         return scn_matrix
 
+    def generate_entry_points(self, entry_container, mode = None):
+        entry_point_container = Frame(entry_container)
+        entry_point_container.pack(side=TOP, pady=2)
+
+        entry_x_container = Frame(entry_point_container)
+        entry_x_container.pack(side=LEFT, padx=10)
+
+        entry_y_container = Frame(entry_point_container)
+        entry_y_container.pack(side=RIGHT, padx=10)
+
+        point_x = IntVar()
+        point_y = IntVar()
+        self.points_x.append(point_x)
+        self.points_y.append(point_y)
+
+        if (mode == "4points"):
+            self.label_x = Label(entry_x_container, text="X")
+            self.label_x.pack(side=LEFT)
+
+            self.entry_x = Entry(entry_x_container, textvariable=point_x)
+            self.entry_x.pack(side=LEFT)
+            
+            self.label_y = Label(entry_y_container, text="Y")
+            self.label_y.pack(side=LEFT)
+            
+            self.entry_y = Entry(entry_y_container, textvariable=point_y)
+            self.entry_y.pack(side=LEFT)
+        else:
+            Label(entry_x_container, text="X").pack(side=LEFT)
+            Entry(entry_x_container, textvariable=point_x).pack(side=LEFT)
+            Label(entry_y_container, text="Y").pack(side=LEFT)
+            Entry(entry_y_container, textvariable=point_y).pack(side=LEFT)
+    
     def get_canvas_center(self):
-        return Coords(self.width / 2, self.height / 2)
+        return Coord(self.width / 2, self.height / 2)
 
     def get_window_height(self):
         return self.window.coords[2].y - self.window.coords[0].y
@@ -235,7 +292,7 @@ class App:
                                            min_vpcoords.x) / (max_wcoords.x - min_wcoords.x)
         y = (1 - ((wcoords.y - min_wcoords.y) / (max_wcoords.y -
                                                  min_wcoords.y))) * (max_vpcoords.y - min_vpcoords.y)
-        return Coords(x, y)
+        return Coord(x, y)
 
     def handle_action_click(self, action):
         selection = self.listbox.curselection()
@@ -250,11 +307,11 @@ class App:
         if action == "Translação":
             self.display_file[item].translate(*values[:2])
         elif action == "Rotação":
-            origin = Coords(0, 0)
+            origin = Coord(0, 0)
             if values[3] == 2:
                 origin = self.display_file[item].return_center()
             elif values[3] == 3:
-                origin = Coords(values[:2])
+                origin = Coord(values[:2])
             angle = values[2]
             self.display_file[item].rotate(origin.x, origin.y, angle)
         elif action == "Escala":
@@ -292,85 +349,6 @@ class App:
         else:
             self.zoom(signal)
 
-    # def line_clipping(self, graphic_object):
-    #     clipped_line = GraphicObject(
-    #         graphic_object.name, graphic_object.coords, graphic_object.color)
-
-    #     min_wcoords = self.normal_window.coords[0]
-    #     max_wcoords = self.normal_window.coords[2]
-
-    #     xl = min_wcoords.x
-    #     xr = max_wcoords.x
-    #     yb = min_wcoords.y
-    #     yt = max_wcoords.y
-    #     # setting region codes of the coordinates of each point
-    #     points_region_codes = []
-    #     for coord in graphic_object.coords:
-    #         region_code = int('0000', 2)
-    #         if (coord.x < xl):
-    #             region_code = region_code | int('0001', 2)
-    #         if (coord.x > xr):
-    #             region_code = region_code | int('0010', 2)
-    #         if (coord.y < yb):
-    #             region_code = region_code | int('0100', 2)
-    #         if (coord.y > yt):
-    #             region_code = region_code | int('1000', 2)
-    #         points_region_codes.append(region_code)
-
-    #     # checking position of points
-    #     rc1 = points_region_codes[0]
-    #     rc2 = points_region_codes[1]
-    #     if (rc1 == 0 and rc2 == 0):
-    #         self.display_file_show.append(graphic_object)
-    #     elif (rc1 & rc2 != 0):
-    #         pass
-    #     elif (rc1 & rc2 == 0 and rc1 != rc2):
-    #         p1 = graphic_object.coords[0]
-    #         p2 = graphic_object.coords[1]
-
-    #         m = (p2.y - p1.y) / (p2.x - p1.x)
-
-    #         # checks if the line intersects the window
-    #         intersects = True
-    #         rc_intersects = False
-    #         for i in range(len(points_region_codes)):
-    #             if (intersects):
-    #                 rc = points_region_codes[i]
-    #                 if (rc & int('0001', 2) == int('0001', 2)):  # left intersection
-    #                     y = m * (xl - p1.x) + p1.y
-    #                     if (y >= yb and y <= yt):
-    #                         rc_intersects = True
-    #                         clipped_line.coords[i].x = xl
-    #                         clipped_line.coords[i].y = y
-    #                     else:
-    #                         intersects = rc_intersects
-    #                 if (rc & int('0010', 2) == int('0010', 2)):  # right intersection
-    #                     y = m * (xr - p1.x) + p1.y
-    #                     if (y >= yb and y <= yt):
-    #                         rc_intersects = True
-    #                         clipped_line.coords[i].x = xr
-    #                         clipped_line.coords[i].y = y
-    #                     else:
-    #                         intersects = rc_intersects
-    #                 if (rc & int('0100', 2) == int('0100', 2)):  # bottom intersection
-    #                     x = p1.x + (1/m) * (yb - p1.y)
-    #                     if (x >= xl and x <= xr):
-    #                         rc_intersects = True
-    #                         clipped_line.coords[i].x = x
-    #                         clipped_line.coords[i].y = yb
-    #                     else:
-    #                         intersects = rc_intersects
-    #                 if (rc & int('1000', 2) == int('1000', 2)):  # top intersection
-    #                     x = p1.x + (1/m) * (yt - p1.y)
-    #                     if (x >= xl and x <= xr):
-    #                         rc_intersects = True
-    #                         clipped_line.coords[i].x = x
-    #                         clipped_line.coords[i].y = yt
-    #                     else:
-    #                         intersects = rc_intersects
-    #         if (intersects):
-    #             self.display_file_show.append(clipped_line)
-
     def move_window(self, direction):
         Cx = 0
         Cy = 0
@@ -395,7 +373,7 @@ class App:
             aux = []
             for coord in graphic_object.coords:
                 result = CalculationMatrix('c', coord.to_list()) * scn_matrix
-                aux.append(Coords(*result.matrix[0]))
+                aux.append(Coord(*result.matrix[0]))
             graphic_object.coords = aux
             graphic_object.normalized = True
             self.display_file_normalized.append(graphic_object)
@@ -412,7 +390,7 @@ class App:
         function_container = Frame(self.root, width=30)
         function_container.pack(side=LEFT, fill=Y)
 
-        Label(function_container, text="Funcoes", width=30).pack(side=TOP)
+        Label(function_container, text="Funções", width=30).pack(side=TOP)
 
         self.listbox = Listbox(function_container, width=35, selectmode=SINGLE)
         self.listbox.pack(side=TOP)
@@ -423,8 +401,11 @@ class App:
         add_and_remove_container = Frame(function_container)
         add_and_remove_container.pack(side=TOP, pady=10)
 
+        curve_container = Frame(function_container)
+        curve_container.pack(side=TOP)
+
         Label(function_container,
-              text="Window/Objeto (selecione na listbox)", width=30).pack(side=TOP)
+              text="Window/Objeto (selecione na listbox)", width=30).pack(side=TOP, pady=10)
 
         main_button_container = Frame(function_container, width=35)
         main_button_container.pack(side=TOP)
@@ -460,6 +441,9 @@ class App:
 
         Button(add_and_remove_container, text="Remover Objeto",
                command=self.remove_object).pack(side=RIGHT)
+
+        Button(curve_container, text="Adicionar curva",
+               command=lambda: self.add_object("curve")).pack(side=BOTTOM)
 
         Button(up_container, text="↑",
                command=lambda: self.handle_translation('up')).pack(side=TOP)
@@ -508,10 +492,8 @@ class App:
 
     def update_all_points_display_file(self):
         self.normalize_display_file()
-        # self.clipping()
         self.display_file_show = []
         for normalized_object in self.display_file_normalized:
-            # for normalized_object in self.display_file_show:
             aux = deepcopy(normalized_object)
             if (len(aux.coords) == 1):
                 aux.clip_point()
@@ -524,9 +506,6 @@ class App:
                 clipped_aux.append(self.transform_coords(obj))
             aux.clipped = clipped_aux
             self.display_file_show.append(aux)
-
-            # normalized_object.coords = self.transform_coords(
-            #     normalized_object.coords)
 
     def zoom(self, signal):
         zoom_value = 0.9 if signal > 0 else 1.1
