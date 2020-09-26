@@ -407,6 +407,9 @@ class App:
         self.listbox = Listbox(function_container, width=35, selectmode=SINGLE)
         self.listbox.pack(side=TOP)
 
+        for o in self.display_file:
+            self.listbox.insert(END, o.name)
+
         Button(function_container, width=29, text="Limpar",
                command=self.handle_clear_selection).pack(side=TOP)
 

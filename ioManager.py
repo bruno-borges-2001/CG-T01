@@ -40,7 +40,7 @@ class IO:
                     coords.append(
                         Coord(float(values[1]), float(values[2]), float(values[3].strip('\n'))))
                 if (values[0] == 'o'):
-                    name = values[1]
+                    name = values[1].strip('\n')
                 if (values[0] == 'usemtl'):
                     color = COLORS[' '.join(values[1:]).strip('\n')]
                 if (values[0] == 'p' or values[0] == 'l' or values[0] == 'f'):
