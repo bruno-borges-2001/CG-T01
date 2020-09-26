@@ -1,6 +1,6 @@
 from math import *
 from copy import deepcopy
-import numpy
+# import numpy
 
 
 class Coord:
@@ -78,16 +78,19 @@ class CalculationMatrix(Matrix):
             super().__init__(
                 3, 3, [[coseno, -seno, 0], [seno, coseno, 0], [0, 0, 1]])
         elif module == 'Mb':
-            super().__init__(4, 4, [ [-1, 3, -3, 1], [3, -6, 3, 0], [-3, 3, 0, 0], [1, 0, 0, 0] ])
+            super().__init__(
+                4, 4, [[-1, 3, -3, 1], [3, -6, 3, 0], [-3, 3, 0, 0], [1, 0, 0, 0]])
         elif module == 'T':
-            super().__init__(1, 4, [[pow(values, 3), pow(values, 2), values, 1]])
+            super().__init__(
+                1, 4, [[pow(values, 3), pow(values, 2), values, 1]])
         elif module == 'G':
-            super().__init__(4, 1, [ [values[0]], [values[1]], [values[2]], [values[3]]])
+            super().__init__(
+                4, 1, [[values[0]], [values[1]], [values[2]], [values[3]]])
 
 
 class GraphicObject:
 
-    def __init__(self, name, coords, color, normalized=False, typeF=None):
+    def __init__(self, name, coords, color, normalized=False, typeF=None, ready=False):
         self.name = name
         self.coords = coords
         self.color = color
@@ -105,30 +108,34 @@ class GraphicObject:
         elif (len(coords) > 2):
             self.type = typeF
             if (typeF == "curve"):
-                self.bezier()
-            self.clip_polygon()
+                if (not ready):
+                    self.bezier()
+                self.clip_curve()
+            else:
+                self.clip_polygon()
 
         self.get_center()
 
     def bezier(self):
         curve_coords = []
-        mb = CalculationMatrix('Mb',[])
+        mb = CalculationMatrix('Mb', [])
         for i in range(floor(len(self.coords)/3)):
             p1 = self.coords[3*i]
             p2 = self.coords[3*i + 1]
             p3 = self.coords[3*i + 2]
             p4 = self.coords[3*i + 3]
-            gbx = CalculationMatrix('G',[p1.x, p2.x, p3.x, p4.x])
-            gby = CalculationMatrix('G',[p1.y, p2.y, p3.y, p4.y])
-
-            for t in numpy.arange(0, 1.005, 0.005):
-                matrix_t = CalculationMatrix('T', t)
+            gbx = CalculationMatrix('G', [p1.x, p2.x, p3.x, p4.x])
+            gby = CalculationMatrix('G', [p1.y, p2.y, p3.y, p4.y])
+            # numpy.arange(0, 1.005, 0.005)
+            for t in range(0, 1005, 5):
+                aux = t/1000
+                matrix_t = CalculationMatrix('T', aux)
                 ptx = matrix_t * mb * gbx
                 pty = matrix_t * mb * gby
                 coord = Coord(ptx.matrix[0][0], pty.matrix[0][0])
                 curve_coords.append(coord)
         self.coords = curve_coords
-        
+
     def calculate_intersection(self, p1, p2, prc):
         intersects = True
         rc_intersects = False
@@ -209,6 +216,14 @@ class GraphicObject:
                 if (intersects):
                     self.clipped.append(new_coords)
 
+    def clip_curve(self):
+        i = 0
+        while i < len(self.coords) - 1:
+            p1 = deepcopy(self.coords[i])
+            p2 = deepcopy(self.coords[i+1])
+            self.clip_line([p1, p2])
+            i += 1
+
     def clip_polygon(self):
         if (not self.normalized):
             return
@@ -229,12 +244,16 @@ class GraphicObject:
 
             for coord in new_coords:
                 coord.artificial = True
-                if (new_coords.index(coord) == 0 and not self.inside(p1)):
+                entered = False
+                if (new_coords.index(coord) == 0 and not self.inside(p1) and coord not in entrantes):
                     entrantes.append(coord)
+                    entered = True
                 # polygon insert
                 if (coord not in polygon):
                     polygon.insert(i+1, coord)
                     i += 1
+                elif (entered):
+                    polygon[i+1].artificial = True
                 #   window insert
                 inserted = False
                 if (coord.y == 1):
@@ -325,7 +344,7 @@ class GraphicObject:
             center_y += coord.y
 
         self.center = Coord(center_x / (len(self.coords)),
-                             center_y / (len(self.coords)))
+                            center_y / (len(self.coords)))
 
     def inside(self, coord):
         return abs(coord.x) <= 1 and abs(coord.y) <= 1

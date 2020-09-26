@@ -37,6 +37,11 @@ class App:
         self.display_file_normalized = []
         self.display_file_show = []
 
+        [colors, objs] = self.IO.import_obj()
+
+        COLORS = colors
+        self.display_file = objs
+
         self.padding = 10
 
         self.window = GraphicObject("Window", [Coord(0, 0)], COLORS["RED"])
@@ -56,7 +61,7 @@ class App:
         self.canvas_container.update_idletasks()
         self.canvas.update_idletasks()
 
-    def add_object(self, mode = None):
+    def add_object(self, mode=None):
         self.new_object_coords = []
         self.entry_point_destroyed = False
         add_point_text = "Adicionar ponto"
@@ -97,7 +102,7 @@ class App:
             self.points_y = []
             for i in range(3):
                 self.generate_entry_points(entry_container)
-            self.generate_entry_points(entry_container,"4points")
+            self.generate_entry_points(entry_container, "4points")
         else:
             entry_x_container = Frame(entry_container)
             entry_x_container.pack(side=TOP)
@@ -118,10 +123,10 @@ class App:
         buttons_container.pack(side=TOP)
 
         Button(buttons_container, text=add_point_text,
-            command=lambda: self.add_point(mode)).pack()
+               command=lambda: self.add_point(mode)).pack()
         self.new_object_listbox.pack(pady=5)
         Button(buttons_container, text="Adicionar objeto",
-            command=lambda: self.add_object_on_screen(mode)).pack()
+               command=lambda: self.add_object_on_screen(mode)).pack()
 
     def add_object_on_screen(self, mode):
         if (len(self.object_name.get()) > 0 and len(self.new_object_coords) > 0):
@@ -130,7 +135,8 @@ class App:
                     typeF = "curve"
                 else:
                     typeF = "polygon"
-            new_object = GraphicObject(self.object_name.get(), self.new_object_coords, COLORS[self.color_combobox.get()], False, typeF)
+            new_object = GraphicObject(self.object_name.get(
+            ), self.new_object_coords, COLORS[self.color_combobox.get()], False, typeF)
             self.listbox.insert(END, new_object.name)
             self.log.insert(0, "Objected " + new_object.name + " added")
             self.display_file.append(new_object)
@@ -143,7 +149,8 @@ class App:
                 x = self.points_x[i].get()
                 y = self.points_y[i].get()
                 self.new_object_coords.append(Coord(x, y))
-                self.new_object_listbox.insert(END, "(" + str(x) + "," + str(y) + ")")
+                self.new_object_listbox.insert(
+                    END, "(" + str(x) + "," + str(y) + ")")
                 self.points_x[i].set(0)
                 self.points_y[i].set(0)
             if not (self.entry_point_destroyed):
@@ -159,7 +166,8 @@ class App:
             x = self.point_x.get()
             y = self.point_y.get()
             self.new_object_coords.append(Coord(x, y))
-            self.new_object_listbox.insert(END, "(" + str(x) + "," + str(y) + ")")
+            self.new_object_listbox.insert(
+                END, "(" + str(x) + "," + str(y) + ")")
             self.point_x.set(0)
             self.point_y.set(0)
 
@@ -203,8 +211,12 @@ class App:
                     for coord in coords:
                         aux += [coord.x + self.padding,
                                 coord.y + self.padding]
-                    self.canvas.create_polygon(
-                        aux, tags=obj.name, outline=obj.color, fill="")
+                    if (obj.type == 'polygon'):
+                        self.canvas.create_polygon(
+                            aux, tags=obj.name, outline=obj.color, fill="")
+                    else:
+                        self.canvas.create_line(
+                            aux, tags=obj.name, fill=obj.color)
                 elif (len(coords) == 2):
                     aux = []
                     for coord in coords:
@@ -230,7 +242,7 @@ class App:
         scn_matrix = translation_matrix * rotation_matrix * scale_matrix
         return scn_matrix
 
-    def generate_entry_points(self, entry_container, mode = None):
+    def generate_entry_points(self, entry_container, mode=None):
         entry_point_container = Frame(entry_container)
         entry_point_container.pack(side=TOP, pady=2)
 
@@ -251,10 +263,10 @@ class App:
 
             self.entry_x = Entry(entry_x_container, textvariable=point_x)
             self.entry_x.pack(side=LEFT)
-            
+
             self.label_y = Label(entry_y_container, text="Y")
             self.label_y.pack(side=LEFT)
-            
+
             self.entry_y = Entry(entry_y_container, textvariable=point_y)
             self.entry_y.pack(side=LEFT)
         else:
@@ -262,7 +274,7 @@ class App:
             Entry(entry_x_container, textvariable=point_x).pack(side=LEFT)
             Label(entry_y_container, text="Y").pack(side=LEFT)
             Entry(entry_y_container, textvariable=point_y).pack(side=LEFT)
-    
+
     def get_canvas_center(self):
         return Coord(self.width / 2, self.height / 2)
 
@@ -500,7 +512,10 @@ class App:
             elif (len(aux.coords) == 2):
                 aux.clip_line()
             elif (len(aux.coords) > 2):
-                aux.clip_polygon()
+                if (aux.type == 'curve'):
+                    aux.clip_curve()
+                else:
+                    aux.clip_polygon()
             clipped_aux = []
             for obj in aux.clipped:
                 clipped_aux.append(self.transform_coords(obj))
