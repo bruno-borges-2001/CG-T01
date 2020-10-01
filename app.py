@@ -37,6 +37,11 @@ class App:
         self.display_file_normalized = []
         self.display_file_show = []
 
+        self.labels_x = []
+        self.entries_x = []
+        self.labels_y = []
+        self.entries_y = []
+
         [colors, objs] = self.IO.import_obj()
 
         COLORS = colors
@@ -61,12 +66,23 @@ class App:
         self.canvas_container.update_idletasks()
         self.canvas.update_idletasks()
 
+    def add_curve(self):
+        self.add_curve_screen = Toplevel(self.root)
+        self.add_curve_screen.title("Selecione o tipo de curva")
+        self.add_curve_screen.geometry("300x100")
+        buttons_container = Frame(self.add_curve_screen)
+        buttons_container.pack(side=TOP, pady=30)
+        Button(buttons_container, text="Bezier", command=lambda: self.add_object("curve")).pack(side=LEFT, padx=20)
+        Button(buttons_container, text="B-Spline", command=lambda: self.add_object("b_spline_curve")).pack(side=LEFT,padx=20)
+
     def add_object(self, mode=None):
+        if (mode):
+            self.add_curve_screen.destroy()
         self.new_object_coords = []
         self.entry_point_destroyed = False
         add_point_text = "Adicionar ponto"
         self.add_object_screen = Toplevel(self.root)
-        if (mode == "curve"):
+        if (mode):
             self.add_object_screen.title("Adicionar curva")
             self.add_object_screen.geometry("500x500")
             add_point_text = "Adicionar pontos"
@@ -100,9 +116,23 @@ class App:
         if (mode == "curve"):
             self.points_x = []
             self.points_y = []
+            self.entries_x = []
+            self.labels_x = []
+            self.entries_y = []
+            self.labels_y = []
             for i in range(3):
                 self.generate_entry_points(entry_container)
-            self.generate_entry_points(entry_container, "4points")
+            self.generate_entry_points(entry_container, "removable_point", 0)
+        elif (mode == "b_spline_curve"):
+            self.points_x = []
+            self.points_y = []
+            self.entries_x = []
+            self.labels_x = []
+            self.entries_y = []
+            self.labels_y = []
+            self.generate_entry_points(entry_container)
+            for i in range(3):
+                self.generate_entry_points(entry_container, "removable_point", i)
         else:
             entry_x_container = Frame(entry_container)
             entry_x_container.pack(side=TOP)
@@ -133,6 +163,8 @@ class App:
             if (len(self.new_object_coords) >= 3):
                 if (mode == "curve"):
                     typeF = "curve"
+                elif (mode == "b_spline_curve"):
+                    typeF = "b_spline_curve"
                 else:
                     typeF = "polygon"
             new_object = GraphicObject(self.object_name.get(
@@ -144,7 +176,7 @@ class App:
             self.add_object_screen.destroy()
 
     def add_point(self, mode):
-        if (mode == "curve"):
+        if (mode == "curve" or mode == "b_spline_curve"):
             for i in range(len(self.points_x)):
                 x = self.points_x[i].get()
                 y = self.points_y[i].get()
@@ -155,13 +187,24 @@ class App:
                 self.points_y[i].set(0)
             if not (self.entry_point_destroyed):
                 self.entry_point_destroyed = True
-                index = len(self.points_x) - 1
-                self.points_x.pop(index)
-                self.points_y.pop(index)
-                self.label_x.destroy()
-                self.entry_x.destroy()
-                self.label_y.destroy()
-                self.entry_y.destroy()
+                for i in range(len(self.entries_x)):
+                    self.points_x.pop(len(self.points_x) - 1)
+                    self.points_y.pop(len(self.points_y) - 1)
+                    self.entries_x[i].destroy()
+                    self.labels_x[i].destroy()
+                    self.entries_y[i].destroy()
+                    self.labels_y[i].destroy()
+                self.entries_x = []
+                self.labels_x = []
+                self.entries_y = []
+                self.labels_y = []
+                # index = len(self.points_x) - 1
+                # self.points_x.pop(index)
+                # self.points_y.pop(index)
+                # self.label_x.destroy()
+                # self.entry_x.destroy()
+                # self.label_y.destroy()
+                # self.entry_y.destroy()
         else:
             x = self.point_x.get()
             y = self.point_y.get()
@@ -242,7 +285,7 @@ class App:
         scn_matrix = translation_matrix * rotation_matrix * scale_matrix
         return scn_matrix
 
-    def generate_entry_points(self, entry_container, mode=None):
+    def generate_entry_points(self, entry_container, mode=None, i=None):
         entry_point_container = Frame(entry_container)
         entry_point_container.pack(side=TOP, pady=2)
 
@@ -257,18 +300,18 @@ class App:
         self.points_x.append(point_x)
         self.points_y.append(point_y)
 
-        if (mode == "4points"):
-            self.label_x = Label(entry_x_container, text="X")
-            self.label_x.pack(side=LEFT)
+        if (mode == "removable_point"):
+            self.labels_x.append(Label(entry_x_container, text="X"))
+            self.labels_x[i].pack(side=LEFT)
 
-            self.entry_x = Entry(entry_x_container, textvariable=point_x)
-            self.entry_x.pack(side=LEFT)
+            self.entries_x.append(Entry(entry_x_container, textvariable=point_x))
+            self.entries_x[i].pack(side=LEFT)
 
-            self.label_y = Label(entry_y_container, text="Y")
-            self.label_y.pack(side=LEFT)
+            self.labels_y.append(Label(entry_y_container, text="Y"))
+            self.labels_y[i].pack(side=LEFT)
 
-            self.entry_y = Entry(entry_y_container, textvariable=point_y)
-            self.entry_y.pack(side=LEFT)
+            self.entries_y.append(Entry(entry_y_container, textvariable=point_y))
+            self.entries_y[i].pack(side=LEFT)
         else:
             Label(entry_x_container, text="X").pack(side=LEFT)
             Entry(entry_x_container, textvariable=point_x).pack(side=LEFT)
@@ -458,7 +501,7 @@ class App:
                command=self.remove_object).pack(side=RIGHT)
 
         Button(curve_container, text="Adicionar curva",
-               command=lambda: self.add_object("curve")).pack(side=BOTTOM)
+               command=lambda: self.add_curve()).pack(side=BOTTOM)
 
         Button(up_container, text="↑",
                command=lambda: self.handle_translation('up')).pack(side=TOP)
