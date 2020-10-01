@@ -125,6 +125,33 @@ class App:
         Button(buttons_container, text=add_point_text,
                command=lambda: self.add_point(mode)).pack()
         self.new_object_listbox.pack(pady=5)
+
+        self.new_object_type = IntVar()
+
+        radio_container = Frame(buttons_container)
+        top_container = Frame(radio_container)
+        bottom_container = Frame(radio_container)
+
+        top_container.pack(side=TOP)
+        bottom_container.pack(side=BOTTOM)
+        self.radio_buttons = [Radiobutton(top_container, text="Ponto",
+                                          variable=self.new_object_type, value=0),
+                              Radiobutton(top_container, text="Linha",
+                                          variable=self.new_object_type, value=1),
+                              Radiobutton(top_container, text="Curva (Bezier)",
+                                          variable=self.new_object_type, value=2),
+                              Radiobutton(bottom_container, text="Curva (B-Spline)",
+                                          variable=self.new_object_type, value=3),
+                              Radiobutton(bottom_container, text="Polígono",
+                                          variable=self.new_object_type, value=4)]
+
+        for rb in self.radio_buttons:
+            rb.pack(side=LEFT)
+
+            rb.configure(state=DISABLED)
+
+        radio_container.pack(side=TOP)
+
         Button(buttons_container, text="Adicionar objeto",
                command=lambda: self.add_object_on_screen(mode)).pack()
 
@@ -171,6 +198,8 @@ class App:
             self.point_x.set(0)
             self.point_y.set(0)
 
+            self.configureRadioButtons()
+
     def check(self, event):
         self.height = self.canvas.winfo_height()
         self.width = self.canvas.winfo_width()
@@ -195,6 +224,25 @@ class App:
         ]
 
         self.draw()
+
+    def configureRadioButtons(self):
+        for rb in self.radio_buttons:
+            rb.configure(state=DISABLED)
+        length = len(self.new_object_coords)
+        if (length == 1):
+            self.radio_buttons[0].configure(state=ACTIVE)
+        elif (length == 2):
+            self.radio_buttons[1].configure(state=ACTIVE)
+        elif (length == 3):
+            self.radio_buttons[1].configure(state=ACTIVE)
+            self.radio_buttons[4].configure(state=ACTIVE)
+        elif (length >= 4):
+            self.radio_buttons[1].configure(state=ACTIVE)
+            self.radio_buttons[3].configure(state=ACTIVE)
+            self.radio_buttons[4].configure(state=ACTIVE)
+            aux = length - 4
+            if (aux % 3 == 0):
+                self.radio_buttons[2].configure(state=ACTIVE)
 
     def draw(self):
         self.update_all_points_display_file()

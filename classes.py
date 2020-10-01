@@ -182,6 +182,13 @@ class GraphicObject:
         intersects = rc_intersects
         return (intersects, new_coords)
 
+    def center_scale(self, Sx, Sy):
+        self.get_center()
+
+        self.translate(-self.center.x, -self.center.y)
+        self.scale(Sx, Sy)
+        self.translate(self.center.x, self.center.y)
+
     def clip_point(self):
         if (not self.normalized):
             pass
@@ -327,13 +334,6 @@ class GraphicObject:
             self.clipped = temp
         else:
             self.clipped = [list(filter(lambda el: self.inside(el), polygon))]
-
-    def center_scale(self, Sx, Sy):
-        self.get_center()
-
-        self.translate(-self.center.x, -self.center.y)
-        self.scale(Sx, Sy)
-        self.translate(self.center.x, self.center.y)
 
     def get_center(self):
         center_x = 0
