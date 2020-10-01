@@ -1,2 +1,9 @@
 mtllib libraries.mtl
 
+v 100.1 200.0 0.0
+v 300.0 400.5 0.0
+o a
+usemtl BLACK
+l -2 -1
+
+

@@ -37,6 +37,11 @@ class App:
         self.display_file_normalized = []
         self.display_file_show = []
 
+        self.labels_x = []
+        self.entries_x = []
+        self.labels_y = []
+        self.entries_y = []
+
         [colors, objs] = self.IO.import_obj()
 
         COLORS = colors
@@ -61,18 +66,12 @@ class App:
         self.canvas_container.update_idletasks()
         self.canvas.update_idletasks()
 
-    def add_object(self, mode=None):
+    def add_object(self):
         self.new_object_coords = []
         self.entry_point_destroyed = False
-        add_point_text = "Adicionar ponto"
         self.add_object_screen = Toplevel(self.root)
-        if (mode == "curve"):
-            self.add_object_screen.title("Adicionar curva")
-            self.add_object_screen.geometry("500x500")
-            add_point_text = "Adicionar pontos"
-        else:
-            self.add_object_screen.title("Adicionar objeto")
-            self.add_object_screen.geometry("300x400")
+        self.add_object_screen.title("Adicionar objeto")
+        self.add_object_screen.geometry("300x400")
 
         name_object_container = Frame(self.add_object_screen)
         name_object_container.pack(side=TOP)
@@ -97,36 +96,30 @@ class App:
         entry_container = Frame(self.add_object_screen)
         entry_container.pack(side=TOP, pady=5)
 
-        if (mode == "curve"):
-            self.points_x = []
-            self.points_y = []
-            for i in range(3):
-                self.generate_entry_points(entry_container)
-            self.generate_entry_points(entry_container, "4points")
-        else:
-            entry_x_container = Frame(entry_container)
-            entry_x_container.pack(side=TOP)
+        entry_x_container = Frame(entry_container)
+        entry_x_container.pack(side=TOP)
 
-            entry_y_container = Frame(entry_container)
-            entry_y_container.pack(side=TOP)
+        entry_y_container = Frame(entry_container)
+        entry_y_container.pack(side=TOP)
 
-            self.point_x = IntVar()
-            self.point_y = IntVar()
-            Label(entry_x_container, text="X").pack(side=LEFT)
-            Entry(entry_x_container, textvariable=self.point_x).pack(side=LEFT)
-            Label(entry_y_container, text="Y").pack(side=LEFT)
-            Entry(entry_y_container, textvariable=self.point_y).pack(side=LEFT)
+        self.point_x = DoubleVar()
+        self.point_y = DoubleVar()
+        Label(entry_x_container, text="X").pack(side=LEFT)
+        Entry(entry_x_container, textvariable=self.point_x).pack(side=LEFT)
+        Label(entry_y_container, text="Y").pack(side=LEFT)
+        Entry(entry_y_container, textvariable=self.point_y).pack(side=LEFT)
 
         buttons_container = Frame(self.add_object_screen)
         self.new_object_listbox = Listbox(buttons_container)
 
         buttons_container.pack(side=TOP)
 
-        Button(buttons_container, text=add_point_text,
-               command=lambda: self.add_point(mode)).pack()
+        Button(buttons_container, text="Adicionar Ponto",
+               command=self.add_point).pack()
         self.new_object_listbox.pack(pady=5)
 
         self.new_object_type = IntVar()
+        self.new_object_type.set(-1)
 
         radio_container = Frame(buttons_container)
         top_container = Frame(radio_container)
@@ -153,52 +146,39 @@ class App:
         radio_container.pack(side=TOP)
 
         Button(buttons_container, text="Adicionar objeto",
-               command=lambda: self.add_object_on_screen(mode)).pack()
+               command=self.add_object_on_screen).pack()
 
-    def add_object_on_screen(self, mode):
-        if (len(self.object_name.get()) > 0 and len(self.new_object_coords) > 0):
-            if (len(self.new_object_coords) >= 3):
-                if (mode == "curve"):
-                    typeF = "curve"
-                else:
-                    typeF = "polygon"
-            new_object = GraphicObject(self.object_name.get(
-            ), self.new_object_coords, COLORS[self.color_combobox.get()], False, typeF)
+    def add_object_on_screen(self):
+        object_type = self.new_object_type.get()
+        name = self.object_name.get()
+        if (len(name) > 0 and object_type > 0):
+            if (object_type == 2):
+                typeF = "curve"
+            elif (object_type == 3):
+                typeF = "b_spline_curve"
+            elif (object_type == 4):
+                typeF = "polygon"
+            elif (object_type == 1):
+                typeF = "line"
+
+            new_object = GraphicObject(
+                name, self.new_object_coords, COLORS[self.color_combobox.get()], False, typeF)
             self.listbox.insert(END, new_object.name)
             self.log.insert(0, "Objected " + new_object.name + " added")
             self.display_file.append(new_object)
             self.draw()
             self.add_object_screen.destroy()
 
-    def add_point(self, mode):
-        if (mode == "curve"):
-            for i in range(len(self.points_x)):
-                x = self.points_x[i].get()
-                y = self.points_y[i].get()
-                self.new_object_coords.append(Coord(x, y))
-                self.new_object_listbox.insert(
-                    END, "(" + str(x) + "," + str(y) + ")")
-                self.points_x[i].set(0)
-                self.points_y[i].set(0)
-            if not (self.entry_point_destroyed):
-                self.entry_point_destroyed = True
-                index = len(self.points_x) - 1
-                self.points_x.pop(index)
-                self.points_y.pop(index)
-                self.label_x.destroy()
-                self.entry_x.destroy()
-                self.label_y.destroy()
-                self.entry_y.destroy()
-        else:
-            x = self.point_x.get()
-            y = self.point_y.get()
-            self.new_object_coords.append(Coord(x, y))
-            self.new_object_listbox.insert(
-                END, "(" + str(x) + "," + str(y) + ")")
-            self.point_x.set(0)
-            self.point_y.set(0)
+    def add_point(self):
+        x = self.point_x.get()
+        y = self.point_y.get()
+        self.new_object_coords.append(Coord(x, y))
+        self.new_object_listbox.insert(
+            END, "(" + str(x) + "," + str(y) + ")")
+        self.point_x.set(0)
+        self.point_y.set(0)
 
-            self.configureRadioButtons()
+        self.configureRadioButtons()
 
     def check(self, event):
         self.height = self.canvas.winfo_height()
@@ -226,6 +206,7 @@ class App:
         self.draw()
 
     def configureRadioButtons(self):
+        self.new_object_type.set(-1)
         for rb in self.radio_buttons:
             rb.configure(state=DISABLED)
         length = len(self.new_object_coords)
@@ -289,39 +270,6 @@ class App:
 
         scn_matrix = translation_matrix * rotation_matrix * scale_matrix
         return scn_matrix
-
-    def generate_entry_points(self, entry_container, mode=None):
-        entry_point_container = Frame(entry_container)
-        entry_point_container.pack(side=TOP, pady=2)
-
-        entry_x_container = Frame(entry_point_container)
-        entry_x_container.pack(side=LEFT, padx=10)
-
-        entry_y_container = Frame(entry_point_container)
-        entry_y_container.pack(side=RIGHT, padx=10)
-
-        point_x = IntVar()
-        point_y = IntVar()
-        self.points_x.append(point_x)
-        self.points_y.append(point_y)
-
-        if (mode == "4points"):
-            self.label_x = Label(entry_x_container, text="X")
-            self.label_x.pack(side=LEFT)
-
-            self.entry_x = Entry(entry_x_container, textvariable=point_x)
-            self.entry_x.pack(side=LEFT)
-
-            self.label_y = Label(entry_y_container, text="Y")
-            self.label_y.pack(side=LEFT)
-
-            self.entry_y = Entry(entry_y_container, textvariable=point_y)
-            self.entry_y.pack(side=LEFT)
-        else:
-            Label(entry_x_container, text="X").pack(side=LEFT)
-            Entry(entry_x_container, textvariable=point_x).pack(side=LEFT)
-            Label(entry_y_container, text="Y").pack(side=LEFT)
-            Entry(entry_y_container, textvariable=point_y).pack(side=LEFT)
 
     def get_canvas_center(self):
         return Coord(self.width / 2, self.height / 2)
@@ -505,8 +453,8 @@ class App:
         Button(add_and_remove_container, text="Remover Objeto",
                command=self.remove_object).pack(side=RIGHT)
 
-        Button(curve_container, text="Adicionar curva",
-               command=lambda: self.add_object("curve")).pack(side=BOTTOM)
+        # Button(curve_container, text="Adicionar curva",
+        #        command=lambda: self.add_curve()).pack(side=BOTTOM)
 
         Button(up_container, text="↑",
                command=lambda: self.handle_translation('up')).pack(side=TOP)
@@ -563,7 +511,7 @@ class App:
             elif (len(aux.coords) == 2):
                 aux.clip_line()
             elif (len(aux.coords) > 2):
-                if (aux.type == 'curve'):
+                if (aux.type == 'curve' or aux.type == 'b_spline_curve' or aux.type == 'line'):
                     aux.clip_curve()
                 else:
                     aux.clip_polygon()

@@ -1,6 +1,5 @@
 from math import *
 from copy import deepcopy
-# import numpy
 
 
 class Coord:
@@ -80,12 +79,21 @@ class CalculationMatrix(Matrix):
         elif module == 'Mb':
             super().__init__(
                 4, 4, [[-1, 3, -3, 1], [3, -6, 3, 0], [-3, 3, 0, 0], [1, 0, 0, 0]])
+        elif module == 'Mbs':
+            super().__init__(
+                4, 4, [[-1/6, 3/6, -3/6, 1/6], [3/6, -6/6, 3/6, 0], [-3/6, 0, 3/6, 0], [1/6, 4/6, 1/6, 0]])
         elif module == 'T':
             super().__init__(
                 1, 4, [[pow(values, 3), pow(values, 2), values, 1]])
         elif module == 'G':
             super().__init__(
                 4, 1, [[values[0]], [values[1]], [values[2]], [values[3]]])
+        elif module == 'delta':
+            d = values
+            d2 = pow(values, 2)
+            d3 = pow(values, 3)
+            super().__init__(
+                4, 4, [[0, 0, 0, 1], [d3, d2, d, 0], [6*d3, 2*d2, 0, 0], [6*d3, 0, 0, 0]])
 
 
 class GraphicObject:
@@ -107,12 +115,14 @@ class GraphicObject:
             self.clip_line()
         elif (len(coords) > 2):
             self.type = typeF
-            if (typeF == "curve"):
-                if (not ready):
-                    self.bezier()
-                self.clip_curve()
-            else:
+            if (typeF == "polygon"):
                 self.clip_polygon()
+            else:
+                if (typeF == "curve" and not ready):
+                    self.bezier()
+                elif (typeF == "b_spline_curve" and not ready):
+                    self.b_spline()
+                self.clip_curve()
 
         self.get_center()
 
@@ -126,7 +136,6 @@ class GraphicObject:
             p4 = self.coords[3*i + 3]
             gbx = CalculationMatrix('G', [p1.x, p2.x, p3.x, p4.x])
             gby = CalculationMatrix('G', [p1.y, p2.y, p3.y, p4.y])
-            # numpy.arange(0, 1.005, 0.005)
             for t in range(0, 1005, 5):
                 aux = t/1000
                 matrix_t = CalculationMatrix('T', aux)
@@ -134,6 +143,32 @@ class GraphicObject:
                 pty = matrix_t * mb * gby
                 coord = Coord(ptx.matrix[0][0], pty.matrix[0][0])
                 curve_coords.append(coord)
+        self.coords = curve_coords
+
+    def b_spline(self):
+        curve_coords = []
+        mbs = CalculationMatrix('Mbs', [])
+        delta = 0.01
+        matrix_delta = CalculationMatrix('delta', delta)
+        n = 1/delta
+        for i in range(len(self.coords) - 3):
+            p1 = self.coords[i]
+            p2 = self.coords[i + 1]
+            p3 = self.coords[i + 2]
+            p4 = self.coords[i + 3]
+            gbsx = CalculationMatrix('G', [p1.x, p2.x, p3.x, p4.x])
+            gbsy = CalculationMatrix('G', [p1.y, p2.y, p3.y, p4.y])
+
+            cx = mbs * gbsx
+            cy = mbs * gbsy
+
+            fsx = matrix_delta * cx
+            fsy = matrix_delta * cy
+
+            curve_coords_aux = self.forward_difference_curve(n,
+                                                             fsx.matrix[0][0], fsx.matrix[1][0], fsx.matrix[2][0], fsx.matrix[3][0],
+                                                             fsy.matrix[0][0], fsy.matrix[1][0], fsy.matrix[2][0], fsy.matrix[3][0])
+            curve_coords += curve_coords_aux
         self.coords = curve_coords
 
     def calculate_intersection(self, p1, p2, prc):
@@ -334,6 +369,31 @@ class GraphicObject:
             self.clipped = temp
         else:
             self.clipped = [list(filter(lambda el: self.inside(el), polygon))]
+
+    def center_scale(self, Sx, Sy):
+        self.get_center()
+
+        self.translate(-self.center.x, -self.center.y)
+        self.scale(Sx, Sy)
+        self.translate(self.center.x, self.center.y)
+
+    def forward_difference_curve(self, n, x, dx, d2x, d3x, y, dy, d2y, d3y):
+        curve_coords = []
+        i = 1
+        curve_coords.append(Coord(x, y))
+        while (i < n):
+            i += 1
+
+            x += dx
+            dx += d2x
+            d2x += d3x
+
+            y += dy
+            dy += d2y
+            d2y += d3y
+
+            curve_coords.append(Coord(x, y))
+        return curve_coords
 
     def get_center(self):
         center_x = 0
