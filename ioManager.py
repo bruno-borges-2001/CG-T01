@@ -44,15 +44,15 @@ class IO:
                 if (values[0] == 'usemtl'):
                     color = COLORS[' '.join(values[1:]).strip('\n')]
                 if (values[0] == 'p' or values[0] == 'l' or values[0] == 'f'):
+                    typeF = None
                     if (len(values[1:]) > 2):
-                        typeF = None
-                        if (values[0] == 'l'):
-                            typeF = 'curve'
-                        else:
-                            typeF = 'polygon'
+                        typef = 'polygon'
+
                     obj_coords = []
                     for c in values[1:]:
-                        obj_coords.append(coords[int(c.strip('\n'))])
+                        value = int(c.strip('\n'))
+                        obj_coords.append(
+                            coords[value - 1 if value > 0 else value])
                     objs.append(GraphicObject(
                         name, obj_coords, color, False, typeF, True))
                     name = False

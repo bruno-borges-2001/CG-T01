@@ -17,6 +17,9 @@ class Coord:
     def to_list(self):
         return [self.x, self.y, self.z]
 
+    def project(self):
+        return Coord(self.x, self.y)
+
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y and self.z == other.z
 
@@ -456,3 +459,16 @@ class GraphicObject:
                 CalculationMatrix('t', [Cx, Cy])
             aux.append(Coord(*result.matrix[0]))
         self.coords = aux
+
+
+class GraphicObject3D(GraphicObject):
+
+    def __init__(self, name, coords, edges, color, ready=False):
+        super().__init__(name, coords, color, False, '3d', ready)
+        self.coords3d = coords
+        self.edges = edges
+
+        self.projection()
+
+    def projection(self):
+        self.coords = list(map(lambda x: x.project, self.coords))
