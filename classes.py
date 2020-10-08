@@ -522,7 +522,6 @@ class GraphicObject3D(GraphicObject):
     def rotate(self, Dx, Dy, Dz, teta):
         self.translate(-Dx, -Dy, -Dz)
 
-        # TODO descobrir angulo do eixo arbitrário
         angle_object = 10
         return_angle = 360 - angle_object
 
@@ -530,7 +529,8 @@ class GraphicObject3D(GraphicObject):
         for coord in self.coords:
             result = CalculationMatrix('c', coord.to_list()) * CalculationMatrix('rx3D', angle_object) * \
                 CalculationMatrix('rz3D', angle_object) * CalculationMatrix('ry3D', teta) * \
-                CalculationMatrix('rz3D', return_angle) * CalculationMatrix('rx3D', return_angle)
+                CalculationMatrix('rz3D', return_angle) * \
+                CalculationMatrix('rx3D', return_angle)
             aux.append(Coord(*result.matrix[0]))
         self.coords = aux
 

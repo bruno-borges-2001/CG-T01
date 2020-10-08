@@ -262,7 +262,7 @@ class Object3DPopup:
         Button(buttons_container, text="Adicionar Aresta",
                command=self.add_edge).pack()
 
-        self.edges_listbox = Listbox(buttons_container)
+        self.edges_listbox = Listbox(buttons_container, width=50)
         self.edges_listbox.pack(pady=5, side=TOP)
 
         self.new_object_type = IntVar()
@@ -278,11 +278,11 @@ class Object3DPopup:
                                           variable=self.new_object_type, value=0),
                               Radiobutton(top_container, text="Linha",
                                           variable=self.new_object_type, value=1),
-                              Radiobutton(top_container, text="Curva (Bezier)",
-                                          variable=self.new_object_type, value=2),
-                              Radiobutton(bottom_container, text="Curva (B-Spline)",
-                                          variable=self.new_object_type, value=3),
-                              Radiobutton(bottom_container, text="Polígono",
+                              # Radiobutton(top_container, text="Curva (Bezier)",
+                              #             variable=self.new_object_type, value=2),
+                              # Radiobutton(bottom_container, text="Curva (B-Spline)",
+                              #             variable=self.new_object_type, value=3),
+                              Radiobutton(bottom_container, text="Forma",
                                           variable=self.new_object_type, value=4)]
 
         for rb in self.radio_buttons:
@@ -294,17 +294,19 @@ class Object3DPopup:
 
         Button(buttons_container, text="Adicionar objeto",
                command=self.add_object_on_screen).pack()
-               
+
     def add_edge(self):
-        coord1 = self.new_object_coords[self.new_object_listbox.curselection()[0]]
-        coord2 = self.new_object_coords[self.new_object_listbox_2.curselection()[0]]
-        edge = [coord1 , coord2]
+        coord1 = self.new_object_coords[self.new_object_listbox.curselection()[
+            0]]
+        coord2 = self.new_object_coords[self.new_object_listbox_2.curselection()[
+            0]]
+        edge = [coord1, coord2]
         self.edges.append(edge)
         self.edges_listbox.insert(END, str(coord1) + " -> " + str(coord2))
 
     def add_object_on_screen(self):
         self.on_submit(self.new_object_type.get(),
-                       self.object_name.get(), self.new_object_coords, self.color_combobox.get(),self.edges)
+                       self.object_name.get(), self.new_object_coords, self.color_combobox.get(), self.edges)
 
     def add_point(self):
         x = self.point_x.get()

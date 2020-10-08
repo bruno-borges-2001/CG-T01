@@ -49,7 +49,7 @@ class App:
 
         self.padding = 10
 
-        self.window = GraphicObject("Window", [Coord(0, 0)], COLORS["RED"])
+        self.window = GraphicObject("Window", [Coord(0, 0, 0)], COLORS["RED"])
         self.normal_window = GraphicObject("NomalWindow", [
                                            Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)], COLORS["RED"])
         self.viewport = GraphicObject(
@@ -86,7 +86,7 @@ class App:
                 typeF = "line"
             elif (object_type == 0):
                 typeF = "point"
-            
+
             if (not object_3D):
                 new_object = GraphicObject(
                     name, coords, COLORS[color], False, typeF)
