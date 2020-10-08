@@ -4,7 +4,7 @@ from copy import deepcopy
 
 class Coord:
 
-    def __init__(self, x, y, z=1, artificial=False):
+    def __init__(self, x, y, z=0, artificial=False):
         self.x = x
         self.y = y
         self.z = z
@@ -482,10 +482,15 @@ class GraphicObject3D(GraphicObject):
         self.coords3d = coords
         self.edges = edges
 
+        self.angle = 90
+
+        self.get_center()
+
         self.projection()
 
     def projection(self):
         self.coords = list(map(lambda x: x.project, self.coords))
+
 
     def center_scale(self, Sx, Sy, Sz):
         self.get_center()
@@ -523,7 +528,7 @@ class GraphicObject3D(GraphicObject):
         self.translate(-Dx, -Dy, -Dz)
 
         # TODO descobrir angulo do eixo arbitrário
-        angle_object = 10
+        angle_object = self.angle
         return_angle = 360 - angle_object
 
         aux = []

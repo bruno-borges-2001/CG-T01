@@ -96,6 +96,8 @@ class App:
                 self.draw()
                 self.add_object_popup.destroy()
             elif (edges != None and object_3D):
+                if (edges and len(edges) == 0 and object_type != 0): 
+                    return
                 new_object = GraphicObject3D(
                     name, coords, edges, COLORS[color], False)
                 self.listbox.insert(END, new_object.name)
@@ -223,7 +225,7 @@ class App:
             if values[3] == 2:
                 origin = self.display_file[item].return_center()
             elif values[3] == 3:
-                origin = Coord(values[:2])
+                origin = Coord(*values[:2])
             angle = values[2]
             self.display_file[item].rotate(origin.x, origin.y, angle)
         elif action == "Escala":
@@ -289,6 +291,13 @@ class App:
             graphic_object.coords = aux
             graphic_object.normalized = True
             self.display_file_normalized.append(graphic_object)
+        
+    def parse_2d(self):
+        output = []
+        aux = deepcopy(self.display_file)
+        for i in aux:
+            if type(i) == 'GraphicObject3d':
+                
 
     def remove_object(self):
         self.log.insert(
