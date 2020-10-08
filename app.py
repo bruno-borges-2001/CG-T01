@@ -297,7 +297,7 @@ class App:
         aux = deepcopy(self.display_file)
         for i in aux:
             if type(i) == 'GraphicObject3d':
-                
+
 
     def remove_object(self):
         self.log.insert(
