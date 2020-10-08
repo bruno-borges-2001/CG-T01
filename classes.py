@@ -4,13 +4,10 @@ from copy import deepcopy
 
 class Coord:
 
-    def __init__(self, x, y, z=None, artificial=False):
+    def __init__(self, x, y, z=1, artificial=False):
         self.x = x
         self.y = y
-        if not z:
-            self.z = 1
-        else:
-            self.z = z
+        self.z = z
 
         self.artificial = artificial
 
@@ -24,7 +21,7 @@ class Coord:
         return self.x == other.x and self.y == other.y and self.z == other.z
 
     def __str__(self):
-        return "(" + str(round(self.x, 2)) + "," + str(round(self.y, 2)) + ")"
+        return "(" + str(round(self.x, 2)) + "," + str(round(self.y, 2)) + "," + str(round(self.z, 2)) + ")"
 
 
 class Matrix:
@@ -70,15 +67,39 @@ class CalculationMatrix(Matrix):
         elif module == 't':
             super().__init__(
                 3, 3, [[1, 0, 0], [0, 1, 0], [values[0], values[1], 0]])
+        elif module == 't3D':
+            super().__init__(
+                4, 4, [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [values[0], values[1], values[2], 1]])
         elif module == 's':
             super().__init__(
                 3, 3, [[values[0], 0, 0], [0, values[1], 0], [0, 0, 1]])
+        elif module == 's3D':
+            super().__init__(
+                4, 4, [[values[0], 0, 0, 0], [0, values[1], 0, 0], [0, 0, values[2], 0], [0, 0, 0, 1]])
         elif module == 'r':
             angle = (360 - values) * (pi/180)
             coseno = round(cos(angle), 5)
             seno = round(sin(angle), 5)
             super().__init__(
                 3, 3, [[coseno, -seno, 0], [seno, coseno, 0], [0, 0, 1]])
+        elif module == 'rx3D':
+            angle = (360 - values) * (pi/180)
+            coseno = round(cos(angle), 5)
+            seno = round(sin(angle), 5)
+            super().__init__(
+                4, 4, [[1, 0, 0, 0], [0, coseno, seno, 0], [0, -seno, coseno, 0], [0, 0, 0, 1]])
+        elif module == 'ry3D':
+            angle = (360 - values) * (pi/180)
+            coseno = round(cos(angle), 5)
+            seno = round(sin(angle), 5)
+            super().__init__(
+                4, 4, [[coseno, 0, -seno, 0], [0, 1, 0, 0], [seno, 0, coseno, 0], [0, 0, 0, 1]])
+        elif module == 'rz3D':
+            angle = (360 - values) * (pi/180)
+            coseno = round(cos(angle), 5)
+            seno = round(sin(angle), 5)
+            super().__init__(
+                4, 4, [[coseno, seno, 0, 0], [-seno, coseno, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
         elif module == 'Mb':
             super().__init__(
                 4, 4, [[-1, 3, -3, 1], [3, -6, 3, 0], [-3, 3, 0, 0], [1, 0, 0, 0]])
@@ -373,13 +394,6 @@ class GraphicObject:
         else:
             self.clipped = [list(filter(lambda el: self.inside(el), polygon))]
 
-    def center_scale(self, Sx, Sy):
-        self.get_center()
-
-        self.translate(-self.center.x, -self.center.y)
-        self.scale(Sx, Sy)
-        self.translate(self.center.x, self.center.y)
-
     def forward_difference_curve(self, n, x, dx, d2x, d3x, y, dy, d2y, d3y):
         curve_coords = []
         i = 1
@@ -472,3 +486,60 @@ class GraphicObject3D(GraphicObject):
 
     def projection(self):
         self.coords = list(map(lambda x: x.project, self.coords))
+
+    def center_scale(self, Sx, Sy, Sz):
+        self.get_center()
+
+        self.translate(-self.center.x, -self.center.y, -self.center.z)
+        self.scale(Sx, Sy, Sz)
+        self.translate(self.center.x, self.center.y, self.center.z)
+
+    def get_center(self):
+        center_x = 0
+        center_y = 0
+        center_z = 0
+
+        for coord in self.coords:
+            center_x += coord.x
+            center_y += coord.y
+            center_z += coord.z
+
+        self.center = Coord(center_x / (len(self.coords)),
+                            center_y / (len(self.coords)),
+                            center_z / (len(self.coords)))
+
+    def inside(self, coord):
+        return abs(coord.x) <= 1 and abs(coord.y) <= 1 and abs(coord.z) <= 1
+
+    def scale(self, Sx, Sy, Sz):
+        aux = []
+        for coord in self.coords:
+            result = CalculationMatrix('c', coord.to_list()) * \
+                CalculationMatrix('s3D', [Sx, Sy, Sz])
+            aux.append(Coord(*result.matrix[0]))
+        self.coords = aux
+
+    def rotate(self, Dx, Dy, Dz, teta):
+        self.translate(-Dx, -Dy, -Dz)
+
+        # TODO descobrir angulo do eixo arbitrário
+        angle_object = 10
+        return_angle = 360 - angle_object
+
+        aux = []
+        for coord in self.coords:
+            result = CalculationMatrix('c', coord.to_list()) * CalculationMatrix('rx3D', angle_object) * \
+                CalculationMatrix('rz3D', angle_object) * CalculationMatrix('ry3D', teta) * \
+                CalculationMatrix('rz3D', return_angle) * CalculationMatrix('rx3D', return_angle)
+            aux.append(Coord(*result.matrix[0]))
+        self.coords = aux
+
+        self.translate(Dx, Dy, Dz)
+
+    def translate(self, Cx, Cy, Cz):
+        aux = []
+        for coord in self.coords:
+            result = CalculationMatrix('c', coord.to_list()) * \
+                CalculationMatrix('t3D', [Cx, Cy, Cz])
+            aux.append(Coord(*result.matrix[0]))
+        self.coords = aux

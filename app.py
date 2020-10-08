@@ -2,8 +2,8 @@
 
 from tkinter import *
 from tkinter import ttk
-from classes import GraphicObject, Coord, Matrix, CalculationMatrix
-from popup import TransformationPopup, Object2DPopup
+from classes import GraphicObject, Coord, Matrix, CalculationMatrix, GraphicObject3D
+from popup import TransformationPopup, Object2DPopup, Object3DPopup
 from copy import deepcopy
 
 from ioManager import IO
@@ -70,8 +70,12 @@ class App:
         self.add_object_popup = Object2DPopup(
             self.root, self.add_object_on_screen, COLORS)
 
-    def add_object_on_screen(self, object_type, name, coords, color):
-        if (len(name) > 0 and object_type >= 0):
+    def add_object_3D(self):
+        self.add_object_3D_popup = Object3DPopup(
+            self.root, self.add_object_on_screen, COLORS)
+
+    def add_object_on_screen(self, object_type, name, coords, color, edges=None, object_3D=False):
+        if (len(name) > 0 and object_type >= 0 and object_3D == False):
             if (object_type == 2):
                 typeF = "curve"
             elif (object_type == 3):
@@ -82,14 +86,23 @@ class App:
                 typeF = "line"
             elif (object_type == 0):
                 typeF = "point"
-
-            new_object = GraphicObject(
-                name, coords, COLORS[color], False, typeF)
-            self.listbox.insert(END, new_object.name)
-            self.log.insert(0, "Object " + new_object.name + " added")
-            self.display_file.append(new_object)
-            self.draw()
-            self.add_object_popup.destroy()
+            
+            if (not object_3D):
+                new_object = GraphicObject(
+                    name, coords, COLORS[color], False, typeF)
+                self.listbox.insert(END, new_object.name)
+                self.log.insert(0, "Object " + new_object.name + " added")
+                self.display_file.append(new_object)
+                self.draw()
+                self.add_object_popup.destroy()
+            elif (edges != None and object_3D):
+                new_object = GraphicObject3D(
+                    name, coords, edges, COLORS[color], False)
+                self.listbox.insert(END, new_object.name)
+                self.log.insert(0, "Object " + new_object.name + " added")
+                self.display_file.append(new_object)
+                self.draw()
+                self.add_object_popup.destroy()
 
     def check(self, event):
         self.height = self.canvas.winfo_height()
@@ -303,8 +316,8 @@ class App:
         add_and_remove_container = Frame(function_container)
         add_and_remove_container.pack(side=TOP, pady=10)
 
-        curve_container = Frame(function_container)
-        curve_container.pack(side=TOP)
+        container_3d = Frame(function_container)
+        container_3d.pack(side=TOP)
 
         Label(function_container,
               text="Window/Objeto (selecione na listbox)", width=30).pack(side=TOP, pady=10)
@@ -344,8 +357,8 @@ class App:
         Button(add_and_remove_container, text="Remover Objeto",
                command=self.remove_object).pack(side=RIGHT)
 
-        # Button(curve_container, text="Adicionar curva",
-        #        command=lambda: self.add_curve()).pack(side=BOTTOM)
+        Button(container_3d, text="Adicionar Objeto 3D",
+               command=self.add_object_3D).pack(side=BOTTOM)
 
         Button(up_container, text="↑",
                command=lambda: self.handle_translation('up')).pack(side=TOP)
