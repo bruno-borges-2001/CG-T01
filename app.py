@@ -5,6 +5,7 @@ from tkinter import ttk
 from classes import GraphicObject, Coord, Matrix, CalculationMatrix, GraphicObject3D
 from popup import TransformationPopup, Object2DPopup, Object3DPopup
 from copy import deepcopy
+from math import *
 
 from ioManager import IO
 
@@ -49,7 +50,8 @@ class App:
 
         self.padding = 10
 
-        self.window = GraphicObject("Window", [Coord(0, 0, 0)], COLORS["RED"])
+        self.window = GraphicObject3D(
+            "Window", [Coord(0, 0)], [], COLORS["RED"])
         self.normal_window = GraphicObject("NomalWindow", [
                                            Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)], COLORS["RED"])
         self.viewport = GraphicObject(
@@ -75,7 +77,7 @@ class App:
             self.root, self.add_object_on_screen, COLORS)
 
     def add_object_on_screen(self, object_type, name, coords, color, edges=None, object_3D=False):
-        if (len(name) > 0 and object_type >= 0 and object_3D == False):
+        if (len(name) > 0 and object_type >= 0):
             if (object_type == 2):
                 typeF = "curve"
             elif (object_type == 3):
@@ -96,13 +98,15 @@ class App:
                 self.draw()
                 self.add_object_popup.destroy()
             elif (edges != None and object_3D):
+                if (edges and len(edges) == 0 and object_type != 0):
+                    return
                 new_object = GraphicObject3D(
                     name, coords, edges, COLORS[color], False)
                 self.listbox.insert(END, new_object.name)
                 self.log.insert(0, "Object " + new_object.name + " added")
                 self.display_file.append(new_object)
                 self.draw()
-                self.add_object_popup.destroy()
+                self.add_object_3D_popup.destroy()
 
     def check(self, event):
         self.height = self.canvas.winfo_height()
@@ -113,7 +117,7 @@ class App:
         XWMAX = self.width
         YWMAX = self.height
 
-        self.window.coords = [
+        self.window.coords3d = [
             Coord(XWMIN, YWMIN),
             Coord(XWMIN, YWMAX),
             Coord(XWMAX, YWMAX),
@@ -179,10 +183,10 @@ class App:
         return Coord(self.width / 2, self.height / 2)
 
     def get_window_height(self):
-        return self.window.coords[2].y - self.window.coords[0].y
+        return self.window.coords3d[2].y - self.window.coords3d[0].y
 
     def get_window_width(self):
-        return self.window.coords[2].x - self.window.coords[0].x
+        return self.window.coords3d[2].x - self.window.coords3d[0].x
 
     def get_translate_values(self, direction):
         value = self.get_window_height() * 0.1
@@ -223,7 +227,7 @@ class App:
             if values[3] == 2:
                 origin = self.display_file[item].return_center()
             elif values[3] == 3:
-                origin = Coord(values[:2])
+                origin = Coord(*values[:2])
             angle = values[2]
             self.display_file[item].rotate(origin.x, origin.y, angle)
         elif action == "Escala":
@@ -279,6 +283,22 @@ class App:
     def normalize_display_file(self):
         scn_matrix = self.generate_scn_matrix()
         graphic_objects = deepcopy(self.display_file)
+
+        vrp = self.window.return_center()
+
+        p1 = vrp - self.window.coords3d[0]
+        p2 = self.window.coords3d[1] - vrp
+        vpn = Coord(p1.y*p2.z - p1.z*p2.y, p1.z*p2.x -
+                    p1.x*p2.z, p1.x*p2.y - p1.y*p2.x)
+
+        teta_x = atan(vpn.y/vpn.z)
+        teta_y = atan(vpn.x/vpn.z)
+
+        self.window.projection(vrp, vpn, teta_x, teta_y)
+
+        for obj in graphic_objects:
+            if (type(obj) is GraphicObject3D):
+                obj.projection(vrp, vpn, teta_x, teta_y)
 
         self.display_file_normalized = []
         for graphic_object in graphic_objects:

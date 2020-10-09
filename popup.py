@@ -296,17 +296,17 @@ class Object3DPopup:
                command=self.add_object_on_screen).pack()
 
     def add_edge(self):
-        coord1 = self.new_object_coords[self.new_object_listbox.curselection()[
-            0]]
-        coord2 = self.new_object_coords[self.new_object_listbox_2.curselection()[
-            0]]
+        coord1 = self.new_object_listbox.curselection()[0]
+        coord2 = self.new_object_listbox_2.curselection()[0]
+        if (coord1 == coord2):
+            return
         edge = [coord1, coord2]
         self.edges.append(edge)
         self.edges_listbox.insert(END, str(coord1) + " -> " + str(coord2))
 
     def add_object_on_screen(self):
         self.on_submit(self.new_object_type.get(),
-                       self.object_name.get(), self.new_object_coords, self.color_combobox.get(), self.edges)
+                       self.object_name.get(), self.new_object_coords, self.color_combobox.get(), self.edges, True)
 
     def add_point(self):
         x = self.point_x.get()
