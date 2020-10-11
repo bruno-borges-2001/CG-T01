@@ -191,13 +191,13 @@ class App:
     def get_translate_values(self, direction):
         value = self.get_window_height() * 0.1
         if (direction == 'up'):
-            return (0, value)
+            return (0, value, 0)
         elif (direction == 'down'):
-            return (0, -value)
+            return (0, -value, 0)
         elif (direction == 'left'):
-            return (-value, 0)
+            return (-value, 0, 0)
         elif (direction == 'right'):
-            return (value, 0)
+            return (value, 0, 0)
 
     def get_viewport_coords(self, wcoords):
         min_wcoords = self.normal_window.coords[0]
@@ -221,17 +221,17 @@ class App:
 
     def handle_submit(self, item, action, values):
         if action == "Translação":
-            self.display_file[item].translate(*values[:2])
+            self.display_file[item].translate(*values[:3])
         elif action == "Rotação":
-            origin = Coord(0, 0)
+            origin = Coord(0, 0, 0)
             if values[3] == 2:
                 origin = self.display_file[item].return_center()
             elif values[3] == 3:
-                origin = Coord(*values[:2])
+                origin = Coord(*values[:3])
             angle = values[2]
-            self.display_file[item].rotate(origin.x, origin.y, angle)
+            self.display_file[item].rotate(origin.x, origin.y, origin.z, angle)
         elif action == "Escala":
-            self.display_file[item].center_scale(*values[:2])
+            self.display_file[item].center_scale(*values[:3])
         self.popup.destroy()
         self.draw()
 
@@ -260,7 +260,7 @@ class App:
             for item in selected:
                 self.log.insert(
                     0, "Object " + self.display_file[item].name + " zoomed " + ("in" if signal > 0 else "out"))
-                self.display_file[item].center_scale(zoom, zoom)
+                self.display_file[item].center_scale(zoom, zoom, 1)
             self.draw()
         else:
             self.zoom(signal)
@@ -276,18 +276,21 @@ class App:
             Cx = -self.get_window_height() * 0.1
         elif (direction == 'right'):
             Cx = self.get_window_height() * 0.1
-        self.window.translate(Cx, Cy)
+        self.window.translate(Cx, Cy, 0)
         self.log.insert(0, "Window moved " + direction)
         self.draw()
 
     def normalize_display_file(self):
         scn_matrix = self.generate_scn_matrix()
-        graphic_objects = deepcopy(self.display_file)
+        # graphic_objects = deepcopy(self.display_file)
 
         vrp = self.window.return_center()
 
-        p1 = vrp - self.window.coords3d[0]
-        p2 = self.window.coords3d[1] - vrp
+        vrpt = Coord(*(CalculationMatrix('c3d', vrp.to_list()) *
+                       CalculationMatrix('t3D', (vrp * -1).to_list())).matrix[0][:-1])
+
+        p1 = vrpt - self.window.coords3d[0] - vrp
+        p2 = self.window.coords3d[1] - vrp - vrpt
         vpn = Coord(p1.y*p2.z - p1.z*p2.y, p1.z*p2.x -
                     p1.x*p2.z, p1.x*p2.y - p1.y*p2.x)
 
@@ -296,12 +299,12 @@ class App:
 
         self.window.projection(vrp, vpn, teta_x, teta_y)
 
-        for obj in graphic_objects:
+        for obj in self.display_file:
             if (type(obj) is GraphicObject3D):
                 obj.projection(vrp, vpn, teta_x, teta_y)
 
         self.display_file_normalized = []
-        for graphic_object in graphic_objects:
+        for graphic_object in self.display_file:
             aux = []
             for coord in graphic_object.coords:
                 result = CalculationMatrix('c', coord.to_list()) * scn_matrix
@@ -441,12 +444,20 @@ class App:
                     aux.clip_polygon()
             clipped_aux = []
             for obj in aux.clipped:
-                clipped_aux.append(self.transform_coords(obj))
-            aux.clipped = clipped_aux
+                if (len(obj) == 1):
+                    clipped_aux.append(obj)
+                    continue
+                aux_edge = deepcopy(obj)
+                for i in [0, 1]:
+                    if (type(obj[i]) is not Coord):
+                        aux_edge[i] = aux.coords[obj[i]]
+                clipped_aux.append(aux_edge)
+
+            aux.clipped = list(map(self.transform_coords, clipped_aux))
             self.display_file_show.append(aux)
 
     def zoom(self, signal):
         zoom_value = 0.9 if signal > 0 else 1.1
-        self.window.center_scale(zoom_value, zoom_value)
+        self.window.center_scale(zoom_value, zoom_value, 1)
         self.log.insert(0, "zoomed in" if signal > 0 else "zoomed out")
         self.draw()

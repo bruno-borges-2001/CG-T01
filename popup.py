@@ -14,6 +14,7 @@ class TransformationPopup:
 
         self.x_value = DoubleVar()
         self.y_value = DoubleVar()
+        self.z_value = DoubleVar()
         self.angle = DoubleVar()
 
         self.rotation_type = IntVar()
@@ -46,7 +47,7 @@ class TransformationPopup:
         self.render_coords()
 
         submit_button = Button(self.root, text="Executar ação",
-                               command=lambda: self.submit_function(self.item, [self.x_value.get(), self.y_value.get(), self.angle.get(), self.rotation_type.get()]))
+                               command=lambda: self.submit_function(self.item, [self.x_value.get(), self.y_value.get(), self.z_value.get(), self.angle.get(), self.rotation_type.get()]))
         submit_button.pack(side=BOTTOM, pady=5)
 
     def render_coords(self):
@@ -63,6 +64,9 @@ class TransformationPopup:
             Label(self.container, text="y").pack(side=LEFT)
             Entry(self.container,
                   textvariable=self.y_value).pack(side=LEFT)
+            Label(self.container, text="z").pack(side=LEFT)
+            Entry(self.container,
+                  textvariable=self.z_value).pack(side=LEFT)
             self.container.pack(side=TOP)
 
     def destroy(self):
@@ -278,10 +282,10 @@ class Object3DPopup:
                                           variable=self.new_object_type, value=0),
                               Radiobutton(top_container, text="Linha",
                                           variable=self.new_object_type, value=1),
-                              # Radiobutton(top_container, text="Curva (Bezier)",
-                              #             variable=self.new_object_type, value=2),
-                              # Radiobutton(bottom_container, text="Curva (B-Spline)",
-                              #             variable=self.new_object_type, value=3),
+                              Radiobutton(top_container, text="Curva (Bezier)",
+                                          variable=self.new_object_type, value=2),
+                              Radiobutton(bottom_container, text="Curva (B-Spline)",
+                                          variable=self.new_object_type, value=3),
                               Radiobutton(bottom_container, text="Forma",
                                           variable=self.new_object_type, value=4)]
 

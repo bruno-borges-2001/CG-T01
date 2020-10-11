@@ -4,7 +4,7 @@ from copy import deepcopy
 
 class Coord:
 
-    def __init__(self, x, y, z=1, artificial=False):
+    def __init__(self, x, y, z=0, artificial=False):
         self.x = x
         self.y = y
         self.z = z
@@ -22,6 +22,12 @@ class Coord:
 
     def __sub__(self, other):
         return Coord(self.x - other.x, self.y - other.y, self.z - other.z)
+
+    def __mul__(self, other):
+        if (type(other) is int):
+            return Coord(self.x * other, self.y * other, self.z * other)
+        else:
+            return Coord(self.x * other.x, self.y * other.y, self.z * other.z)
 
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y and self.z == other.z
@@ -486,14 +492,40 @@ class GraphicObject:
 
 class GraphicObject3D(GraphicObject):
 
-    def __init__(self, name, coords, edges, color, ready=False):
+    def __init__(self, name, coords, edges, color, typeF=None, ready=False):
         self.coords3d = coords
-        super().__init__(name, coords, color, False, '3d', ready)
         self.edges = edges
+        super().__init__(name, coords, color, False, typeF if typeF else '3d', ready)
 
-        self.angle = 90
+        self.angle_x = 90
+        self.angle_z = 90
 
         self.get_center()
+
+    def clip(self):
+        aux = []
+        for edge in self.edges:
+            p1 = self.coords[edge[0]]
+            p2 = self.coords[edge[1]]
+            new_values = self.clip_line([p1, p2], True)
+            if (len(new_values) == 0):
+                continue
+            else:
+                new_edge = deepcopy(edge)
+                if (p1 != new_values[0]):
+                    new_edge[0] = new_values[0]
+                elif (p2 != new_values[1]):
+                    new_edge[1] = new_values[1]
+                aux.append(new_edge)
+        self.clipped = aux
+
+    def clip_polygon(self):
+        if (self.normalized):
+            self.clip()
+
+    def clip_curve(self):
+        if (self.normalized):
+            self.clip()
 
     def projection(self, vrp, vpn, teta_x, teta_y):
         self.translate(-vrp.x, -vrp.y, -vrp.z)
@@ -533,37 +565,48 @@ class GraphicObject3D(GraphicObject):
 
     def scale(self, Sx, Sy, Sz):
         aux = []
-        for coord in self.coords:
-            result = CalculationMatrix('c', coord.to_list()) * \
+        for coord in self.coords3d:
+            result = CalculationMatrix('c3d', coord.to_list()) * \
                 CalculationMatrix('s3D', [Sx, Sy, Sz])
             aux.append(Coord(*result.matrix[0]))
-        self.coords = aux
+        self.coords3d = aux
 
     def rotate(self, Dx, Dy, Dz, teta):
         self.translate(-Dx, -Dy, -Dz)
 
-        # TODO descobrir angulo do eixo arbitrário
-        angle_object = self.angle
-        return_angle = 360 - angle_object
-
         aux = []
-        for coord in self.coords:
-            result = CalculationMatrix('c', coord.to_list()) * CalculationMatrix('rx3D', angle_object) * \
-                CalculationMatrix('rz3D', angle_object) * CalculationMatrix('ry3D', teta) * \
-                CalculationMatrix('rz3D', return_angle) * \
-                CalculationMatrix('rx3D', return_angle)
-            aux.append(Coord(*result.matrix[0]))
-        self.coords = aux
+        for coord in self.coords3d:
+            result = CalculationMatrix('c3d', coord.to_list()) * CalculationMatrix('rx3D', self.angle_x) * \
+                CalculationMatrix('rz3D', self.angle_z) * CalculationMatrix('ry3D', teta) * \
+                CalculationMatrix('rz3D', 360 - self.angle_x) * \
+                CalculationMatrix('rx3D', 360 - self.angle_z)
+            aux.append(Coord(*result.matrix[0][:-1]))
+        self.coords3d = aux
 
         self.translate(Dx, Dy, Dz)
 
+    def center_rotate(self, teta, axis):
+        if (axis == 'x'):
+            self.angle_x = 0
+            self.angle_y = 90
+            self.angle_z = 90
+        elif (axis == 'y'):
+            self.angle_x = 90
+            self.angle_y = 0
+            self.angle_z = 90
+        elif (axis == 'z'):
+            self.angle_x = 90
+            self.angle_y = 90
+            self.angle_z = 0
+        self.rotate(*self.return_center().to_list(), teta)
+
     def translate(self, Cx, Cy, Cz):
         aux = []
-        for coord in self.coords:
+        for coord in self.coords3d:
             result = CalculationMatrix('c3d', coord.to_list()) * \
                 CalculationMatrix('t3D', [Cx, Cy, Cz])
             aux.append(Coord(*result.matrix[0]))
-        self.coords = aux
+        self.coords3d = aux
 
 
 class GObject:
