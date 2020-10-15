@@ -58,6 +58,8 @@ class App:
             "Viewport", [Coord(0, 0)], COLORS["RED"])
 
         self.window_rotation_angle = 0
+        self.window_rotation_x = 0
+        self.window_rotation_y = 0
 
         self.height = 0
         self.width = 0
@@ -249,13 +251,19 @@ class App:
 
     def handle_window_rotation(self, direction):
         self.window_rotation_angle += 15 if direction == 'right' else -15
-
+        # self.window.center_rotate(self.window_rotation_angle, 'z')
+        # self.log.insert(0, "Window rotated " + direction + " on axis z")
         self.log.insert(0, "Window rotated " + direction)
         self.draw()
 
     def window_rotation(self, direction, axis):
-        self.window_rotation_3D = 15 if direction == 'right' or 'top' else -15
-        self.window.center_rotate(self.window_rotation_3D, axis)
+        if (axis == 'x'):
+            self.window_rotation_x += 15 if direction == 'top' else -15
+            self.window.center_rotate(self.window_rotation_x, axis)
+        elif (axis == 'y'):
+            self.window_rotation_y += 15 if direction == 'right' else -15
+            self.window.center_rotate(self.window_rotation_y, axis)
+
         self.log.insert(0, "Window rotated " + direction + " on axis " + axis)
         self.draw()
 

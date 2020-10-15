@@ -585,20 +585,56 @@ class GraphicObject3D(GraphicObject):
 
         self.translate(Dx, Dy, Dz)
 
+    def rotate_x(self, Dx, Dy, Dz, teta):
+        self.translate(-Dx, -Dy, -Dz)
+
+        aux = []
+        for coord in self.coords3d:
+            result = CalculationMatrix('c3d', coord.to_list()) * CalculationMatrix('rx3D', teta)
+            aux.append(Coord(*result.matrix[0][:-1]))
+        self.coords3d = aux
+
+        self.translate(Dx, Dy, Dz)
+
+    def rotate_y(self, Dx, Dy, Dz, teta):
+        self.translate(-Dx, -Dy, -Dz)
+
+        aux = []
+        for coord in self.coords3d:
+            result = CalculationMatrix('c3d', coord.to_list()) * CalculationMatrix('ry3D', teta)
+            aux.append(Coord(*result.matrix[0][:-1]))
+        self.coords3d = aux
+
+        self.translate(Dx, Dy, Dz)
+
+    def rotate_z(self, Dx, Dy, Dz, teta):
+        self.translate(-Dx, -Dy, -Dz)
+
+        aux = []
+        for coord in self.coords3d:
+            result = CalculationMatrix('c3d', coord.to_list()) * CalculationMatrix('rz3D', teta)
+            aux.append(Coord(*result.matrix[0][:-1]))
+        self.coords3d = aux
+
+        self.translate(Dx, Dy, Dz)
+
     def center_rotate(self, teta, axis):
         if (axis == 'x'):
-            self.angle_x = 0
-            self.angle_y = 90
-            self.angle_z = 90
+            # self.angle_x = 0
+            # self.angle_y = 90
+            # self.angle_z = 90
+            self.rotate_x(*self.return_center().to_list(), teta)
         elif (axis == 'y'):
-            self.angle_x = 90
-            self.angle_y = 0
-            self.angle_z = 90
+            # self.angle_x = 90
+            # self.angle_y = 0
+            # self.angle_z = 90
+            self.rotate_y(*self.return_center().to_list(), teta)
         elif (axis == 'z'):
-            self.angle_x = 90
-            self.angle_y = 90
-            self.angle_z = 0
-        self.rotate(*self.return_center().to_list(), teta)
+            # self.angle_x = 90
+            # self.angle_y = 90
+            # self.angle_z = 0
+            self.rotate_z(*self.return_center().to_list(), teta)
+        # self.rotate(*self.return_center().to_list(), teta)
 
     def translate(self, Cx, Cy, Cz):
         aux = []
