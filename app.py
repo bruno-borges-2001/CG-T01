@@ -253,6 +253,13 @@ class App:
         self.log.insert(0, "Window rotated " + direction)
         self.draw()
 
+    def window_rotation(self, direction, axis):
+        self.window_rotation_3D = 15 if direction == 'right' or 'top' else -15
+        self.window.center_rotate(self.window_rotation_3D, axis)
+        self.log.insert(0, "Window rotated " + direction + " on axis " + axis)
+        self.draw()
+
+
     def handle_zoom(self, signal):
         selected = self.listbox.curselection()
         if len(selected) > 0:
@@ -415,6 +422,18 @@ class App:
 
         Button(rotation_container, text="↷",
                command=lambda: self.handle_window_rotation('right')).pack(side=LEFT)
+
+        Button(rotation_container, text="↻",
+               command=lambda: self.window_rotation('left', 'y')).pack(side=LEFT)
+
+        Button(rotation_container, text="↺",
+               command=lambda: self.window_rotation('right', 'y')).pack(side=LEFT)
+
+        Button(rotation_container, text="⤴",
+               command=lambda: self.window_rotation('top', 'x')).pack(side=LEFT)
+
+        Button(rotation_container, text="⤵",
+               command=lambda: self.window_rotation('bottom', 'x')).pack(side=LEFT)
 
         self.log = Listbox(function_container, width=35)
         self.log.pack(fill=Y, side=BOTTOM)

@@ -9,7 +9,7 @@ class TransformationPopup:
     def __init__(self, parent, option, item, on_submit):
         self.root = Toplevel(parent)
         self.root.title(option)
-        self.root.geometry("300x200")
+        self.root.geometry("700x200")
         self.option = option
 
         self.x_value = DoubleVar()
