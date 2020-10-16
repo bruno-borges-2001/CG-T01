@@ -568,44 +568,32 @@ class GraphicObject3D(GraphicObject):
         for coord in self.coords3d:
             result = CalculationMatrix('c3d', coord.to_list()) * \
                 CalculationMatrix('s3D', [Sx, Sy, Sz])
-            aux.append(Coord(*result.matrix[0]))
+            aux.append(Coord(*result.matrix[0][:-1]))
         self.coords3d = aux
 
-    def rotate(self, Dx, Dy, Dz, teta):
+    def rotate(self, Dx, Dy, Dz, teta, obj_angle_x=90, obj_angle_z=90):
         self.translate(-Dx, -Dy, -Dz)
+
+        self.angle_x = obj_angle_x
+        self.angle_z = obj_angle_z
 
         aux = []
         for coord in self.coords3d:
             result = CalculationMatrix('c3d', coord.to_list()) * CalculationMatrix('rx3D', self.angle_x) * \
                 CalculationMatrix('rz3D', self.angle_z) * CalculationMatrix('ry3D', teta) * \
-                CalculationMatrix('rz3D', 360 - self.angle_x) * \
-                CalculationMatrix('rx3D', 360 - self.angle_z)
+                CalculationMatrix('rz3D', 360 - self.angle_z) * \
+                CalculationMatrix('rx3D', 360 - self.angle_x)
             aux.append(Coord(*result.matrix[0][:-1]))
         self.coords3d = aux
 
         self.translate(Dx, Dy, Dz)
-
-    def center_rotate(self, teta, axis):
-        if (axis == 'x'):
-            self.angle_x = 0
-            self.angle_y = 90
-            self.angle_z = 90
-        elif (axis == 'y'):
-            self.angle_x = 90
-            self.angle_y = 0
-            self.angle_z = 90
-        elif (axis == 'z'):
-            self.angle_x = 90
-            self.angle_y = 90
-            self.angle_z = 0
-        self.rotate(*self.return_center().to_list(), teta)
 
     def translate(self, Cx, Cy, Cz):
         aux = []
         for coord in self.coords3d:
             result = CalculationMatrix('c3d', coord.to_list()) * \
                 CalculationMatrix('t3D', [Cx, Cy, Cz])
-            aux.append(Coord(*result.matrix[0]))
+            aux.append(Coord(*result.matrix[0][:-1]))
         self.coords3d = aux
 
 

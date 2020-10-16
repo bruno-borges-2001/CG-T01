@@ -1,9 +1,2 @@
 mtllib libraries.mtl
 
-v 0.0 0.0 0.0
-v 0.37 -1.89 0.0
-o a
-usemtl BLACK
-l -2 -1
-
-

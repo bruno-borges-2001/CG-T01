@@ -183,10 +183,16 @@ class App:
         return Coord(self.width / 2, self.height / 2)
 
     def get_window_height(self):
-        return self.window.coords3d[2].y - self.window.coords3d[0].y
+        return sqrt(pow(self.window.coords3d[1].x - self.window.coords3d[1].x, 2)
+                    + pow(self.window.coords3d[1].y -
+                          self.window.coords3d[0].y, 2)
+                    + pow(self.window.coords3d[1].z - self.window.coords3d[0].z, 2))
 
     def get_window_width(self):
-        return self.window.coords3d[2].x - self.window.coords3d[0].x
+        return sqrt(pow(self.window.coords3d[3].x - self.window.coords3d[0].x, 2)
+                    + pow(self.window.coords3d[3].y -
+                          self.window.coords3d[0].y, 2)
+                    + pow(self.window.coords3d[3].z - self.window.coords3d[0].z, 2))
 
     def get_translate_values(self, direction):
         value = self.get_window_height() * 0.1
@@ -224,11 +230,11 @@ class App:
             self.display_file[item].translate(*values[:3])
         elif action == "Rotação":
             origin = Coord(0, 0, 0)
-            if values[3] == 2:
+            if values[4] == 2:
                 origin = self.display_file[item].return_center()
-            elif values[3] == 3:
+            elif values[4] == 3:
                 origin = Coord(*values[:3])
-            angle = values[2]
+            angle = values[3]
             self.display_file[item].rotate(origin.x, origin.y, origin.z, angle)
         elif action == "Escala":
             self.display_file[item].center_scale(*values[:3])
@@ -248,7 +254,10 @@ class App:
             self.move_window(direction)
 
     def handle_window_rotation(self, direction):
-        self.window_rotation_angle += 15 if direction == 'right' else -15
+        # self.window_rotation_angle += 15 if direction == 'right' else -15
+
+        self.window.rotate(*self.window.center.to_list(),
+                           15 if direction == 'right' else -15, 90, 0)
 
         self.log.insert(0, "Window rotated " + direction)
         self.draw()
