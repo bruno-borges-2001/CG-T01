@@ -46,6 +46,15 @@ class Matrix:
 		else:
 			self.matrix = values
 
+	def translate_matrix(self):
+		aux = []
+		for i in range(self.width):
+			aux_column = []
+			for j in range(self.height):
+				aux_column.append(self.matrix[j][i])
+			aux.append(aux_column)
+		return Matrix(self.width, self.height, aux)
+
 	def createEmptyMatrix(self):
 		self.matrix = [[0 for j in range(self.width)]
 					   for i in range(self.height)]
@@ -509,6 +518,10 @@ class GraphicObject3D(GraphicObject):
 		self.get_center()
 
 	def clip(self):
+		for coord in self.coords3d:
+			if (coord.z < 0):
+				self.clipped = []
+				return
 		aux = []
 		for edge in self.edges:
 			p1 = self.coords[edge[0]]
@@ -533,11 +546,11 @@ class GraphicObject3D(GraphicObject):
 		if (self.normalized):
 			self.clip()
 
-	def projection(self, vrp, vpn, teta_x, teta_y, mode):
+	def projection(self, vrp, vpn, teta_x, teta_y, mode, width=0):
 		if mode == 'parallel':
 			self.translate(-vrp.x, -vrp.y, -vrp.z)
 		else:
-			self.translate(-vrp.x, -vrp.y, -100)
+			self.translate(-vrp.x, -vrp.y, width * sqrt(3) / 6 - vrp.z)
 
 		rot_x = CalculationMatrix("rx3D", teta_x)
 		rot_y = CalculationMatrix("ry3D", teta_y)
@@ -545,8 +558,8 @@ class GraphicObject3D(GraphicObject):
 		for coord in self.coords3d:
 			result = CalculationMatrix('c3d', coord.to_list()) * rot_x * rot_y
 			if mode == 'perspective':
-				result *= CalculationMatrix('Mper', -100)
-			aux.append(Coord(*result.matrix[0][:-1]))
+				result = CalculationMatrix('Mper', width * sqrt(3)/6) * result.translate_matrix()
+			aux.append(Coord(*result.translate_matrix().matrix[0][:-1]))
 
 		self.coords3d = aux
 		self.coords = list(map(lambda x: x.project(), self.coords3d))

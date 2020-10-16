@@ -186,10 +186,22 @@ class App:
 		return Coord(self.width / 2, self.height / 2)
 
 	def get_window_height(self):
-		return self.window.coords3d[2].y - self.window.coords3d[0].y
+		return sqrt(
+			(self.window.coords3d[3].x-self.window.coords3d[0].x)**2 +
+			(self.window.coords3d[3].y-self.window.coords3d[0].y)**2 +
+			(self.window.coords3d[3].z-self.window.coords3d[0].z)**2
+		)
+		# return self.window.coords3d[2].y - self.window.coords3d[0].y
+
+
+
 
 	def get_window_width(self):
-		return self.window.coords3d[2].x - self.window.coords3d[0].x
+		return sqrt(
+			(self.window.coords3d[1].x-self.window.coords3d[0].x)**2 +
+			(self.window.coords3d[1].y-self.window.coords3d[0].y)**2 +
+			(self.window.coords3d[1].z-self.window.coords3d[0].z)**2
+		)
 
 	def get_translate_values(self, direction):
 		value = self.get_window_height() * 0.1
@@ -338,16 +350,16 @@ class App:
 		vrp = self.window.return_center()
 		vrpt = Coord(*(CalculationMatrix('c3d', vrp.to_list()) *
 					   CalculationMatrix('t3D', (vrp * -1).to_list())).matrix[0][:-1])
-		p1 = vrpt - self.window.coords3d[0] - vrp
-		p2 = self.window.coords3d[1] - vrp - vrpt
+		p1 = vrpt - deepcopy(self.window.coords3d[0]) - vrp
+		p2 = deepcopy(self.window.coords3d[1]) - vrp - vrpt
 		vpn = Coord(p1.y * p2.z - p1.z * p2.y, p1.z * p2.x -
 					p1.x * p2.z, p1.x * p2.y - p1.y * p2.x)
 		teta_x = atan(vpn.y / vpn.z)
 		teta_y = atan(vpn.x / vpn.z)
-		self.window.projection(vrp, vpn, teta_x, teta_y, 'perspective')
+		self.window.projection(vrp, vpn, teta_x, teta_y, 'perspective', self.get_window_width())
 		for obj in self.display_file:
 			if (type(obj) is GraphicObject3D):
-				obj.projection(vrp, vpn, teta_x, teta_y, 'perspective')
+				obj.projection(vrp, vpn, teta_x, teta_y, 'perspective', self.get_window_width())
 
 	def remove_object(self):
 		self.log.insert(
