@@ -42,6 +42,12 @@ class TransformationPopup:
                         variable=self.rotation_type, value=2, command=self.render_coords).pack(side=LEFT)
             Radiobutton(radio_container, text="Coordenada",
                         variable=self.rotation_type, value=3, command=self.render_coords).pack(side=LEFT)
+            Radiobutton(radio_container, text="X",
+                        variable=self.rotation_type, value=4, command=self.render_coords).pack(side=LEFT)
+            Radiobutton(radio_container, text="Y",
+                        variable=self.rotation_type, value=5, command=self.render_coords).pack(side=LEFT)
+            Radiobutton(radio_container, text="Z",
+                        variable=self.rotation_type, value=6, command=self.render_coords).pack(side=LEFT)
             radio_container.pack(side=TOP)
 
         self.render_coords()
