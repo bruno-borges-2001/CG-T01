@@ -57,9 +57,9 @@ class App:
 		self.viewport = GraphicObject(
 			"Viewport", [Coord(0, 0)], COLORS["RED"])
 
-		self.window_rotation_angle = 0
-		self.window_rotation_x = 0
-		self.window_rotation_y = 0
+		self.window_rotation_angle_x = 0
+		self.window_rotation_angle_y = 0
+		self.window_rotation_angle_z = 0
 
 		self.height = 0
 		self.width = 0
@@ -173,11 +173,18 @@ class App:
 	def generate_scn_matrix(self):
 		window_center = self.window.return_center()
 
-		translation_matrix = CalculationMatrix(
-			't', [-(window_center.x), -(window_center.y)])
-		rotation_matrix = CalculationMatrix('r', self.window_rotation_angle)
-		scale_matrix = CalculationMatrix(
-			's', [1 / (self.get_window_width() / 2), 1 / (self.get_window_height() / 2)])
+		# translation_matrix = CalculationMatrix(
+		# 	't', [-(window_center.x), -(window_center.y)])
+		translation_matrix = CalculationMatrix('t3D', [-(window_center.x), -(window_center.y), -(window_center.z)])
+
+		# rotation_matrix = CalculationMatrix('r', self.window_rotation_angle_z)
+		rotation_matrix = CalculationMatrix('rx3D', self.window_rotation_angle_x) * \
+			CalculationMatrix('ry3D', self.window_rotation_angle_y) * \
+			CalculationMatrix('rz3D', self.window_rotation_angle_z)
+		
+		# scale_matrix = CalculationMatrix(
+		# 	's', [1 / (self.get_window_width() / 2), 1 / (self.get_window_height() / 2)])
+		scale_matrix = CalculationMatrix('s3D', [1 / (self.get_window_width() / 2), 1 / (self.get_window_height() / 2), 1])
 
 		scn_matrix = translation_matrix * rotation_matrix * scale_matrix
 		return scn_matrix
@@ -270,19 +277,19 @@ class App:
 			self.move_window(direction)
 
 	def handle_window_rotation(self, direction):
-		self.window_rotation_angle += 15 if direction == 'right' else -15
-		# self.window.center_rotate(self.window_rotation_angle, 'z')
-		# self.log.insert(0, "Window rotated " + direction + " on axis z")
-		self.log.insert(0, "Window rotated " + direction)
+		self.window_rotation_angle_z += 15 if direction == 'right' else -15
+		# self.window.center_rotate(self.window_rotation_angle_z, 'z')
+		self.log.insert(0, "Window rotated " + direction + " on axis z")
+		# self.log.insert(0, "Window rotated " + direction)
 		self.draw()
 
 	def window_rotation(self, direction, axis):
 		if (axis == 'x'):
-			self.window_rotation_x += 15 if direction == 'top' else -15
-			self.window.center_rotate(self.window_rotation_x, axis)
+			self.window_rotation_angle_x += 15 if direction == 'top' else -15
+			#self.window.center_rotate(self.window_rotation_angle_x, axis)
 		elif (axis == 'y'):
-			self.window_rotation_y += 15 if direction == 'right' else -15
-			self.window.center_rotate(self.window_rotation_y, axis)
+			self.window_rotation_angle_y += 15 if direction == 'right' else -15
+			#self.window.center_rotate(self.window_rotation_angle_y, axis)
 
 		self.log.insert(0, "Window rotated " + direction + " on axis " + axis)
 		self.draw()
@@ -316,16 +323,16 @@ class App:
 
 	def normalize_display_file(self):
 		scn_matrix = self.generate_scn_matrix()
-		# graphic_objects = deepcopy(self.display_file)
+		graphic_objects = deepcopy(self.display_file)
 
 		#self.parallel_projection()
 		self.perspective_projection()
 
 		self.display_file_normalized = []
-		for graphic_object in self.display_file:
+		for graphic_object in graphic_objects:
 			aux = []
-			for coord in graphic_object.coords:
-				result = CalculationMatrix('c', coord.to_list()) * scn_matrix
+			for coord3d in graphic_object.coords3d:
+				result = CalculationMatrix('c3d', coord3d.to_list()) * scn_matrix
 				aux.append(Coord(*result.matrix[0]))
 			graphic_object.coords = aux
 			graphic_object.normalized = True
