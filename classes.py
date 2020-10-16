@@ -91,25 +91,25 @@ class CalculationMatrix(Matrix):
             super().__init__(
                 4, 4, [[values[0], 0, 0, 0], [0, values[1], 0, 0], [0, 0, values[2], 0], [0, 0, 0, 1]])
         elif module == 'r':
-            angle = (360 - values) * (pi/180)
+            angle = (360 - values) * (pi / 180)
             coseno = round(cos(angle), 5)
             seno = round(sin(angle), 5)
             super().__init__(
                 3, 3, [[coseno, -seno, 0], [seno, coseno, 0], [0, 0, 1]])
         elif module == 'rx3D':
-            angle = (360 - values) * (pi/180)
+            angle = (360 - values) * (pi / 180)
             coseno = round(cos(angle), 5)
             seno = round(sin(angle), 5)
             super().__init__(
                 4, 4, [[1, 0, 0, 0], [0, coseno, seno, 0], [0, -seno, coseno, 0], [0, 0, 0, 1]])
         elif module == 'ry3D':
-            angle = (360 - values) * (pi/180)
+            angle = (360 - values) * (pi / 180)
             coseno = round(cos(angle), 5)
             seno = round(sin(angle), 5)
             super().__init__(
                 4, 4, [[coseno, 0, -seno, 0], [0, 1, 0, 0], [seno, 0, coseno, 0], [0, 0, 0, 1]])
         elif module == 'rz3D':
-            angle = (360 - values) * (pi/180)
+            angle = (360 - values) * (pi / 180)
             coseno = round(cos(angle), 5)
             seno = round(sin(angle), 5)
             super().__init__(
@@ -119,7 +119,8 @@ class CalculationMatrix(Matrix):
                 4, 4, [[-1, 3, -3, 1], [3, -6, 3, 0], [-3, 3, 0, 0], [1, 0, 0, 0]])
         elif module == 'Mbs':
             super().__init__(
-                4, 4, [[-1/6, 3/6, -3/6, 1/6], [3/6, -6/6, 3/6, 0], [-3/6, 0, 3/6, 0], [1/6, 4/6, 1/6, 0]])
+                4, 4, [[-1/6, 3/6, -3/6, 1/6], [3/6, -6/6, 3/6, 0], [-3/6, 0, 3/6, 0],
+                       [1/6, 4/6, 1/6, 0]])
         elif module == 'T':
             super().__init__(
                 1, 4, [[pow(values, 3), pow(values, 2), values, 1]])
@@ -131,7 +132,10 @@ class CalculationMatrix(Matrix):
             d2 = pow(values, 2)
             d3 = pow(values, 3)
             super().__init__(
-                4, 4, [[0, 0, 0, 1], [d3, d2, d, 0], [6*d3, 2*d2, 0, 0], [6*d3, 0, 0, 0]])
+                4, 4, [[0, 0, 0, 1], [d3, d2, d, 0], [6 * d3, 2 * d2, 0, 0], [6 * d3, 0, 0, 0]])
+        elif module == 'Mper':
+            super().__init__(
+                4, 4, [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 1/values, 0]])
 
 
 class GraphicObject:
@@ -168,15 +172,15 @@ class GraphicObject:
     def bezier(self):
         curve_coords = []
         mb = CalculationMatrix('Mb', [])
-        for i in range(floor(len(self.coords)/3)):
-            p1 = self.coords[3*i]
-            p2 = self.coords[3*i + 1]
-            p3 = self.coords[3*i + 2]
-            p4 = self.coords[3*i + 3]
+        for i in range(floor(len(self.coords) / 3)):
+            p1 = self.coords[3 * i]
+            p2 = self.coords[3 * i + 1]
+            p3 = self.coords[3 * i + 2]
+            p4 = self.coords[3 * i + 3]
             gbx = CalculationMatrix('G', [p1.x, p2.x, p3.x, p4.x])
             gby = CalculationMatrix('G', [p1.y, p2.y, p3.y, p4.y])
             for t in range(0, 1005, 5):
-                aux = t/1000
+                aux = t / 1000
                 matrix_t = CalculationMatrix('T', aux)
                 ptx = matrix_t * mb * gbx
                 pty = matrix_t * mb * gby
@@ -189,7 +193,7 @@ class GraphicObject:
         mbs = CalculationMatrix('Mbs', [])
         delta = 0.01
         matrix_delta = CalculationMatrix('delta', delta)
-        n = 1/delta
+        n = 1 / delta
         for i in range(len(self.coords) - 3):
             p1 = self.coords[i]
             p2 = self.coords[i + 1]
@@ -205,8 +209,10 @@ class GraphicObject:
             fsy = matrix_delta * cy
 
             curve_coords_aux = self.forward_difference_curve(n,
-                                                             fsx.matrix[0][0], fsx.matrix[1][0], fsx.matrix[2][0], fsx.matrix[3][0],
-                                                             fsy.matrix[0][0], fsy.matrix[1][0], fsy.matrix[2][0], fsy.matrix[3][0])
+                                                             fsx.matrix[0][0], fsx.matrix[1][0], fsx.matrix[2][0],
+                                                             fsx.matrix[3][0],
+                                                             fsy.matrix[0][0], fsy.matrix[1][0], fsy.matrix[2][0],
+                                                             fsy.matrix[3][0])
             curve_coords += curve_coords_aux
         self.coords = curve_coords
 
@@ -301,7 +307,7 @@ class GraphicObject:
         i = 0
         while i < len(self.coords) - 1:
             p1 = deepcopy(self.coords[i])
-            p2 = deepcopy(self.coords[i+1])
+            p2 = deepcopy(self.coords[i + 1])
             self.clip_line([p1, p2])
             i += 1
 
@@ -320,7 +326,7 @@ class GraphicObject:
         left = [Coord(-1, -1)]
         while i < len(polygon):
             p1 = deepcopy(polygon[i])
-            p2 = deepcopy(polygon[(i+1) % len(polygon)])
+            p2 = deepcopy(polygon[(i + 1) % len(polygon)])
             new_coords = self.clip_line([p1, p2], True)
 
             for coord in new_coords:
@@ -331,10 +337,10 @@ class GraphicObject:
                     entered = True
                 # polygon insert
                 if (coord not in polygon):
-                    polygon.insert(i+1, coord)
+                    polygon.insert(i + 1, coord)
                     i += 1
                 elif (entered):
-                    polygon[i+1].artificial = True
+                    polygon[i + 1].artificial = True
                 #   window insert
                 inserted = False
                 if (coord.y == 1):
@@ -390,18 +396,18 @@ class GraphicObject:
                 if (e in polygon):
                     i = (polygon.index(e) + 1) % len(polygon)
                     temp[-1].append(e)
-                    if (polygon[i-1].artificial):
+                    if (polygon[i - 1].artificial):
                         while not polygon[i].artificial:
                             if (self.inside(polygon[i])):
                                 temp[-1].append(polygon[i])
-                            i = (i+1) % len(polygon)
+                            i = (i + 1) % len(polygon)
                 if (e not in polygon or polygon[i] != e):
                     aux = e if e not in polygon else polygon[i]
                     temp[-1].append(aux)
-                    i = (window.index(aux)+1) % len(window)
+                    i = (window.index(aux) + 1) % len(window)
                     while not window[i].artificial:
                         temp[-1].append(window[i])
-                        i = (i+1) % len(window)
+                        i = (i + 1) % len(window)
                     temp[-1].append(window[i])
                     if (window[i] == e):
                         temp.append([])
@@ -497,8 +503,8 @@ class GraphicObject3D(GraphicObject):
         self.edges = edges
         super().__init__(name, coords, color, False, typeF if typeF else '3d', ready)
 
-        self.angle_x = 90
-        self.angle_z = 90
+        self.angle_x = 0
+        self.angle_z = 0
 
         self.get_center()
 
@@ -527,13 +533,19 @@ class GraphicObject3D(GraphicObject):
         if (self.normalized):
             self.clip()
 
-    def projection(self, vrp, vpn, teta_x, teta_y):
-        self.translate(-vrp.x, -vrp.y, -vrp.z)
+    def projection(self, vrp, vpn, teta_x, teta_y, mode):
+        if mode == 'parallel':
+            self.translate(-vrp.x, -vrp.y, -vrp.z)
+        else:
+            self.translate(-vrp.x, -vrp.y, -100)
+
         rot_x = CalculationMatrix("rx3D", teta_x)
         rot_y = CalculationMatrix("ry3D", teta_y)
         aux = []
         for coord in self.coords3d:
             result = CalculationMatrix('c3d', coord.to_list()) * rot_x * rot_y
+            if mode == 'perspective':
+                result *= CalculationMatrix('Mper', -100)
             aux.append(Coord(*result.matrix[0][:-1]))
 
         self.coords3d = aux
@@ -568,114 +580,168 @@ class GraphicObject3D(GraphicObject):
         for coord in self.coords3d:
             result = CalculationMatrix('c3d', coord.to_list()) * \
                 CalculationMatrix('s3D', [Sx, Sy, Sz])
-            aux.append(Coord(*result.matrix[0][:-1]))
+            aux.append(Coord(*result.matrix[0]))
         self.coords3d = aux
 
-    def rotate(self, Dx, Dy, Dz, teta, obj_angle_x=90, obj_angle_z=90):
+    def rotate(self, Dx, Dy, Dz, teta):
         self.translate(-Dx, -Dy, -Dz)
 
-        self.angle_x = obj_angle_x
-        self.angle_z = obj_angle_z
+        self.get_center()
+        # self.angle_x = atan(self.center.y / self.center.z)
+        # self.angle_z = atan(self.center.y / self.center.x)
 
         aux = []
         for coord in self.coords3d:
             result = CalculationMatrix('c3d', coord.to_list()) * CalculationMatrix('rx3D', self.angle_x) * \
                 CalculationMatrix('rz3D', self.angle_z) * CalculationMatrix('ry3D', teta) * \
-                CalculationMatrix('rz3D', 360 - self.angle_z) * \
-                CalculationMatrix('rx3D', 360 - self.angle_x)
+                CalculationMatrix('rz3D', 360 - self.angle_x) * \
+                CalculationMatrix('rx3D', 360 - self.angle_z)
             aux.append(Coord(*result.matrix[0][:-1]))
         self.coords3d = aux
 
         self.translate(Dx, Dy, Dz)
+
+    def rotate_x(self, Dx, Dy, Dz, teta):
+        self.translate(-Dx, -Dy, -Dz)
+
+        aux = []
+        for coord in self.coords3d:
+            result = CalculationMatrix(
+                'c3d', coord.to_list()) * CalculationMatrix('rx3D', teta)
+            aux.append(Coord(*result.matrix[0][:-1]))
+        self.coords3d = aux
+
+        self.translate(Dx, Dy, Dz)
+
+    def rotate_y(self, Dx, Dy, Dz, teta):
+        self.translate(-Dx, -Dy, -Dz)
+
+        aux = []
+        for coord in self.coords3d:
+            result = CalculationMatrix(
+                'c3d', coord.to_list()) * CalculationMatrix('ry3D', teta)
+            aux.append(Coord(*result.matrix[0][:-1]))
+        self.coords3d = aux
+
+        self.translate(Dx, Dy, Dz)
+
+    def rotate_z(self, Dx, Dy, Dz, teta):
+        self.translate(-Dx, -Dy, -Dz)
+
+        aux = []
+        for coord in self.coords3d:
+            result = CalculationMatrix(
+                'c3d', coord.to_list()) * CalculationMatrix('rz3D', teta)
+            aux.append(Coord(*result.matrix[0][:-1]))
+        self.coords3d = aux
+
+        self.translate(Dx, Dy, Dz)
+
+    def center_rotate(self, teta, axis):
+        if (axis == 'x'):
+            # self.angle_x = 0
+            # self.angle_y = 90
+            # self.angle_z = 90
+            self.rotate_x(*self.return_center().to_list(), teta)
+        elif (axis == 'y'):
+            # self.angle_x = 90
+            # self.angle_y = 0
+            # self.angle_z = 90
+            self.rotate_y(*self.return_center().to_list(), teta)
+        elif (axis == 'z'):
+            # self.angle_x = 90
+            # self.angle_y = 90
+            # self.angle_z = 0
+            self.rotate_z(*self.return_center().to_list(), teta)
+        # self.rotate(*self.return_center().to_list(), teta)
 
     def translate(self, Cx, Cy, Cz):
         aux = []
         for coord in self.coords3d:
             result = CalculationMatrix('c3d', coord.to_list()) * \
                 CalculationMatrix('t3D', [Cx, Cy, Cz])
-            aux.append(Coord(*result.matrix[0][:-1]))
+            aux.append(Coord(*result.matrix[0]))
         self.coords3d = aux
 
+# class GObject:
 
-class GObject:
+#     def __init__(self, name, coords, edges, color, shape):
+#         self.name = name
+#         self.color = color
+#         self.coords = coords
+#         self.edges = edges
+#         self.shape = shape
 
-    def __init__(self, name, coords, edges, color, shape):
-        self.name = name
-        self.color = color
-        self.coords = coords
-        self.edges = edges
-        self.shape = shape
+#         self.angle = 90
 
-        self.angle = 90
+#         self.get_center()
 
-        self.get_center()
+#     def translate(self, Tx, Ty, Tz=0):
+#         translate_matrix = CalculationMatrix('t3d', [Tx, Ty, Tz])
 
-    def translate(self, Tx, Ty, Tz=0):
-        translate_matrix = CalculationMatrix('t3d', [Tx, Ty, Tz])
+#         aux = []
+#         for coord in self.coords:
+#             result = CalculationMatrix(
+#                 'c3d', coord.to_list()) * translate_matrix
+#             aux.append(Coord(*result.matrix[0][:-1]))
+#         self.coords = aux
 
-        aux = []
-        for coord in self.coords:
-            result = CalculationMatrix(
-                'c3d', coord.to_list()) * translate_matrix
-            aux.append(Coord(*result.matrix[0][:-1]))
-        self.coords = aux
+#     def scale(self, Sx, Sy, Sz=0):
+#         scale_matrix = CalculationMatrix('s3d', [Sx, Sy, Sz])
 
-    def scale(self, Sx, Sy, Sz=0):
-        scale_matrix = CalculationMatrix('s3d', [Sx, Sy, Sz])
+#         aux = []
+#         for coord in self.coords:
+#             result = CalculationMatrix(
+#                 'c3d', coord.to_list()) * scale_matrix
+#             aux.append(Coord(*result.matrix[0][:-1]))
+#         self.coords = aux
 
-        aux = []
-        for coord in self.coords:
-            result = CalculationMatrix(
-                'c3d', coord.to_list()) * scale_matrix
-            aux.append(Coord(*result.matrix[0][:-1]))
-        self.coords = aux
+#     def center_scale(self, Sx, Sy, Sz=0):
+#         self.get_center()
 
-    def center_scale(self, Sx, Sy, Sz=0):
-        self.get_center()
+#         self.translate(-self.center.x, -self.center.y, -self.center.z)
+#         self.scale(Sx, Sy, Sz)
+#         self.translate(self.center.x, self.center.y, self.center.z)
 
-        self.translate(-self.center.x, -self.center.y, -self.center.z)
-        self.scale(Sx, Sy, Sz)
-        self.translate(self.center.x, self.center.y, self.center.z)
+#     def rotate(self, Dx, Dy, Dz=0, teta=15):
+#         self.get_center()
+#         self.translate(-Dx, -Dy, -Dz)
+#         # TODO descobrir angulo do eixo arbitrário
+#         angle_x = self.center.x/self.center.y
+#         return_angle_x = 360 - angle_x
 
-    def rotate(self, Dx, Dy, Dz=0, teta=15):
-        self.get_center()
-        self.translate(-Dx, -Dy, -Dz)
-        # TODO descobrir angulo do eixo arbitrário
-        angle_x = self.center.x/self.center.y
-        return_angle_x = 360 - angle_x
+#         angle_z = self.center.z/self.center.z
+#         return_angle_z = 360 - angle_z
 
-        angle_z = self.center.z/self.center.z
-        return_angle_z = 360 - angle_z
+#         rotation_x_matrix = CalculationMatrix('rx3D', angle_x)
+#         rotation_z_matrix = CalculationMatrix('rz3D', angle_z)
+#         return_x_matrix = CalculationMatrix('rx3D', return_angle_x)
+#         return_z_matrix = CalculationMatrix('rz3D', return_angle_z)
 
-        rotation_x_matrix = CalculationMatrix('rx3D', angle_x)
-        rotation_z_matrix = CalculationMatrix('rz3D', angle_z)
-        return_x_matrix = CalculationMatrix('rx3D', return_angle_x)
-        return_z_matrix = CalculationMatrix('rz3D', return_angle_z)
+#         aux = []
+#         for coord in self.coords:
+#             result = CalculationMatrix('c', coord.to_list()) * rotation_x_matrix * rotation_z_matrix * \
+#                 CalculationMatrix('ry3D', teta) * \
+#                 return_z_matrix * return_x_matrix
+#             aux.append(Coord(*result.matrix[0][:-1]))
+#         self.coords = aux
 
-        aux = []
-        for coord in self.coords:
-            result = CalculationMatrix('c', coord.to_list()) * rotation_x_matrix * rotation_z_matrix * \
-                CalculationMatrix('ry3D', teta) * \
-                return_z_matrix * return_x_matrix
-            aux.append(Coord(*result.matrix[0][:-1]))
-        self.coords = aux
+#         self.translate(Dx, Dy, Dz)
 
-        self.translate(Dx, Dy, Dz)
+#     def get_center(self):
+#         center_x = 0
+#         center_y = 0
+#         center_z = 0
 
-    def get_center(self):
-        center_x = 0
-        center_y = 0
-        center_z = 0
+#         for coord in self.coords3d:
+#             center_x += coord.x
+#             center_y += coord.y
+#             center_z += coord.z
 
-        for coord in self.coords3d:
-            center_x += coord.x
-            center_y += coord.y
-            center_z += coord.z
+#         self.center = Coord(center_x / (len(self.coords3d)),
+#                             center_y / (len(self.coords3d)),
+#                             center_z / (len(self.coords3d)))
 
-        self.center = Coord(center_x / (len(self.coords3d)),
-                            center_y / (len(self.coords3d)),
-                            center_z / (len(self.coords3d)))
-
-    def return_center(self):
-        self.get_center()
-        return self.center
+#     def return_center(self):
+#         self.get_center()
+#         return self.center

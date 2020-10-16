@@ -53,11 +53,13 @@ class App:
         self.window = GraphicObject3D(
             "Window", [Coord(0, 0)], [], COLORS["RED"])
         self.normal_window = GraphicObject("NomalWindow", [
-                                           Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)], COLORS["RED"])
+            Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)], COLORS["RED"])
         self.viewport = GraphicObject(
             "Viewport", [Coord(0, 0)], COLORS["RED"])
 
         self.window_rotation_angle = 0
+        self.window_rotation_x = 0
+        self.window_rotation_y = 0
 
         self.height = 0
         self.width = 0
@@ -163,7 +165,9 @@ class App:
                         aux, tags=obj.name, fill=obj.color)
                 elif (len(coords) == 1):
                     self.canvas.create_oval(
-                        coords[0].x - 1 + self.padding, coords[0].y - 1 + self.padding, coords[0].x + 1 + self.padding, coords[0].y + 1 + self.padding, fill=obj.color)
+                        coords[0].x - 1 + self.padding, coords[0].y -
+                        1 + self.padding, coords[0].x + 1 + self.padding,
+                        coords[0].y + 1 + self.padding, fill=obj.color)
         self.canvas.tag_raise("viewport")
         self.IO.export_obh(self.display_file, COLORS)
 
@@ -174,7 +178,7 @@ class App:
             't', [-(window_center.x), -(window_center.y)])
         rotation_matrix = CalculationMatrix('r', self.window_rotation_angle)
         scale_matrix = CalculationMatrix(
-            's', [1/(self.get_window_width() / 2), 1/(self.get_window_height() / 2)])
+            's', [1 / (self.get_window_width() / 2), 1 / (self.get_window_height() / 2)])
 
         scn_matrix = translation_matrix * rotation_matrix * scale_matrix
         return scn_matrix
@@ -183,16 +187,10 @@ class App:
         return Coord(self.width / 2, self.height / 2)
 
     def get_window_height(self):
-        return sqrt(pow(self.window.coords3d[1].x - self.window.coords3d[1].x, 2)
-                    + pow(self.window.coords3d[1].y -
-                          self.window.coords3d[0].y, 2)
-                    + pow(self.window.coords3d[1].z - self.window.coords3d[0].z, 2))
+        return self.window.coords3d[2].y - self.window.coords3d[0].y
 
     def get_window_width(self):
-        return sqrt(pow(self.window.coords3d[3].x - self.window.coords3d[0].x, 2)
-                    + pow(self.window.coords3d[3].y -
-                          self.window.coords3d[0].y, 2)
-                    + pow(self.window.coords3d[3].z - self.window.coords3d[0].z, 2))
+        return self.window.coords3d[2].x - self.window.coords3d[0].x
 
     def get_translate_values(self, direction):
         value = self.get_window_height() * 0.1
@@ -230,12 +228,23 @@ class App:
             self.display_file[item].translate(*values[:3])
         elif action == "Rotação":
             origin = Coord(0, 0, 0)
-            if values[4] == 2:
+            if values[4] == 2 or values[4] == 4 or values[4] == 5 or values[4] == 6:
                 origin = self.display_file[item].return_center()
             elif values[4] == 3:
                 origin = Coord(*values[:3])
             angle = values[3]
-            self.display_file[item].rotate(origin.x, origin.y, origin.z, angle)
+            if values[4] == 4:
+                self.display_file[item].rotate_x(
+                    origin.x, origin.y, origin.z, angle)
+            elif values[4] == 5:
+                self.display_file[item].rotate_y(
+                    origin.x, origin.y, origin.z, angle)
+            elif values[4] == 6:
+                self.display_file[item].rotate_z(
+                    origin.x, origin.y, origin.z, angle)
+            else:
+                self.display_file[item].rotate(
+                    origin.x, origin.y, origin.z, angle)
         elif action == "Escala":
             self.display_file[item].center_scale(*values[:3])
         self.popup.destroy()
@@ -254,12 +263,21 @@ class App:
             self.move_window(direction)
 
     def handle_window_rotation(self, direction):
-        # self.window_rotation_angle += 15 if direction == 'right' else -15
-
-        self.window.rotate(*self.window.center.to_list(),
-                           15 if direction == 'right' else -15, 90, 0)
-
+        self.window_rotation_angle += 15 if direction == 'right' else -15
+        # self.window.center_rotate(self.window_rotation_angle, 'z')
+        # self.log.insert(0, "Window rotated " + direction + " on axis z")
         self.log.insert(0, "Window rotated " + direction)
+        self.draw()
+
+    def window_rotation(self, direction, axis):
+        if (axis == 'x'):
+            self.window_rotation_x += 15 if direction == 'top' else -15
+            self.window.center_rotate(self.window_rotation_x, axis)
+        elif (axis == 'y'):
+            self.window_rotation_y += 15 if direction == 'right' else -15
+            self.window.center_rotate(self.window_rotation_y, axis)
+
+        self.log.insert(0, "Window rotated " + direction + " on axis " + axis)
         self.draw()
 
     def handle_zoom(self, signal):
@@ -291,26 +309,10 @@ class App:
 
     def normalize_display_file(self):
         scn_matrix = self.generate_scn_matrix()
-        # graphic_objects = deepcopy(self.display_file)
+        self.original_display_file = deepcopy(self.display_file)
 
-        vrp = self.window.return_center()
-
-        vrpt = Coord(*(CalculationMatrix('c3d', vrp.to_list()) *
-                       CalculationMatrix('t3D', (vrp * -1).to_list())).matrix[0][:-1])
-
-        p1 = vrpt - self.window.coords3d[0] - vrp
-        p2 = self.window.coords3d[1] - vrp - vrpt
-        vpn = Coord(p1.y*p2.z - p1.z*p2.y, p1.z*p2.x -
-                    p1.x*p2.z, p1.x*p2.y - p1.y*p2.x)
-
-        teta_x = atan(vpn.y/vpn.z)
-        teta_y = atan(vpn.x/vpn.z)
-
-        self.window.projection(vrp, vpn, teta_x, teta_y)
-
-        for obj in self.display_file:
-            if (type(obj) is GraphicObject3D):
-                obj.projection(vrp, vpn, teta_x, teta_y)
+        # self.parallel_projection()
+        self.perspective_projection()
 
         self.display_file_normalized = []
         for graphic_object in self.display_file:
@@ -321,6 +323,36 @@ class App:
             graphic_object.coords = aux
             graphic_object.normalized = True
             self.display_file_normalized.append(graphic_object)
+
+    def parallel_projection(self):
+        vrp = self.window.return_center()
+        vrpt = Coord(*(CalculationMatrix('c3d', vrp.to_list()) *
+                       CalculationMatrix('t3D', (vrp * -1).to_list())).matrix[0][:-1])
+        p1 = vrpt - self.window.coords3d[0] - vrp
+        p2 = self.window.coords3d[1] - vrp - vrpt
+        vpn = Coord(p1.y * p2.z - p1.z * p2.y, p1.z * p2.x -
+                    p1.x * p2.z, p1.x * p2.y - p1.y * p2.x)
+        teta_x = atan(vpn.y / vpn.z)
+        teta_y = atan(vpn.x / vpn.z)
+        self.window.projection(vrp, vpn, teta_x, teta_y, 'parallel')
+        for obj in self.display_file:
+            if (type(obj) is GraphicObject3D):
+                obj.projection(vrp, vpn, teta_x, teta_y, 'parallel')
+
+    def perspective_projection(self):
+        vrp = self.window.return_center()
+        vrpt = Coord(*(CalculationMatrix('c3d', vrp.to_list()) *
+                       CalculationMatrix('t3D', (vrp * -1).to_list())).matrix[0][:-1])
+        p1 = vrpt - self.window.coords3d[0] - vrp
+        p2 = self.window.coords3d[1] - vrp - vrpt
+        vpn = Coord(p1.y * p2.z - p1.z * p2.y, p1.z * p2.x -
+                    p1.x * p2.z, p1.x * p2.y - p1.y * p2.x)
+        teta_x = atan(vpn.y / vpn.z)
+        teta_y = atan(vpn.x / vpn.z)
+        self.window.projection(vrp, vpn, teta_x, teta_y, 'perspective')
+        for obj in self.display_file:
+            if (type(obj) is GraphicObject3D):
+                obj.projection(vrp, vpn, teta_x, teta_y, 'perspective')
 
     def remove_object(self):
         self.log.insert(
@@ -425,6 +457,18 @@ class App:
         Button(rotation_container, text="↷",
                command=lambda: self.handle_window_rotation('right')).pack(side=LEFT)
 
+        Button(rotation_container, text="↻",
+               command=lambda: self.window_rotation('left', 'y')).pack(side=LEFT)
+
+        Button(rotation_container, text="↺",
+               command=lambda: self.window_rotation('right', 'y')).pack(side=LEFT)
+
+        Button(rotation_container, text="⤴",
+               command=lambda: self.window_rotation('top', 'x')).pack(side=LEFT)
+
+        Button(rotation_container, text="⤵",
+               command=lambda: self.window_rotation('bottom', 'x')).pack(side=LEFT)
+
         self.log = Listbox(function_container, width=35)
         self.log.pack(fill=Y, side=BOTTOM)
 
@@ -433,6 +477,10 @@ class App:
 
     def transform_coords(self, coords):
         aux = []
+        # min_x = min(map(lambda c: c.x, self.window.coords))
+        # min_y = min(map(lambda c: c.y, self.window.coords))
+        # max_x = max(map(lambda c: c.x, self.window.coords))
+        # max_y = max(map(lambda c: c.y, self.window.coords))
         for coord in coords:
             aux.append(self.get_viewport_coords(coord))
         return aux
