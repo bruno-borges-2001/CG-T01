@@ -331,8 +331,8 @@ class App:
 		self.display_file_normalized = []
 		for graphic_object in graphic_objects:
 			aux = []
-			for coord3d in graphic_object.coords3d:
-				result = CalculationMatrix('c3d', coord3d.to_list()) * scn_matrix
+			for coord in graphic_object.coords:
+				result = CalculationMatrix('c3d', coord.to_list()) * scn_matrix
 				aux.append(Coord(*result.matrix[0]))
 			graphic_object.coords = aux
 			graphic_object.normalized = True
@@ -354,6 +354,8 @@ class App:
 				obj.projection(vrp, vpn, teta_x, teta_y, 'parallel')
 
 	def perspective_projection(self):
+		vision_angle = 120
+		cop_distance = abs(self.get_window_width() / tan(vision_angle))
 		vrp = self.window.return_center()
 		vrpt = Coord(*(CalculationMatrix('c3d', vrp.to_list()) *
 					   CalculationMatrix('t3D', (vrp * -1).to_list())).matrix[0][:-1])
@@ -363,10 +365,10 @@ class App:
 					p1.x * p2.z, p1.x * p2.y - p1.y * p2.x)
 		teta_x = atan(vpn.y / vpn.z)
 		teta_y = atan(vpn.x / vpn.z)
-		self.window.projection(vrp, vpn, teta_x, teta_y, 'perspective', self.get_window_width())
+		self.window.projection(vrp, vpn, teta_x, teta_y, 'perspective', cop_distance)
 		for obj in self.display_file:
 			if (type(obj) is GraphicObject3D):
-				obj.projection(vrp, vpn, teta_x, teta_y, 'perspective', self.get_window_width())
+				obj.projection(vrp, vpn, teta_x, teta_y, 'perspective', cop_distance)
 
 	def remove_object(self):
 		self.log.insert(

@@ -546,23 +546,53 @@ class GraphicObject3D(GraphicObject):
 		if (self.normalized):
 			self.clip()
 
-	def projection(self, vrp, vpn, teta_x, teta_y, mode, width=0):
+	# def projection(self, vrp, vpn, teta_x, teta_y, mode, width=0):
+	# 	if mode == 'parallel':
+	# 		self.translate(-vrp.x, -vrp.y, -vrp.z)
+	# 	else:
+	# 		self.translate(-vrp.x, -vrp.y, width * sqrt(3) / 6 - vrp.z)
+
+	# 	rot_x = CalculationMatrix("rx3D", teta_x)
+	# 	rot_y = CalculationMatrix("ry3D", teta_y)
+	# 	aux = []
+	# 	for coord in self.coords3d:
+	# 		result = CalculationMatrix('c3d', coord.to_list()) * rot_x * rot_y
+	# 		if mode == 'perspective':
+	# 			result = CalculationMatrix('Mper', width * sqrt(3)/6) * result.translate_matrix()
+	# 		aux.append(Coord(*result.translate_matrix().matrix[0][:-1]))
+
+	# 	self.coords3d = aux
+	# 	self.coords = list(map(lambda x: x.project(), self.coords3d))
+	# 	self.translate(0,0, width * sqrt(3)/6)
+
+	def projection(self, vrp, vpn, teta_x, teta_y, mode, cop_distance=0):
 		if mode == 'parallel':
 			self.translate(-vrp.x, -vrp.y, -vrp.z)
 		else:
-			self.translate(-vrp.x, -vrp.y, width * sqrt(3) / 6 - vrp.z)
+			self.translate(-vrp.x, -vrp.y, -vrp.z + cop_distance)
 
 		rot_x = CalculationMatrix("rx3D", teta_x)
 		rot_y = CalculationMatrix("ry3D", teta_y)
 		aux = []
 		for coord in self.coords3d:
 			result = CalculationMatrix('c3d', coord.to_list()) * rot_x * rot_y
-			if mode == 'perspective':
-				result = CalculationMatrix('Mper', width * sqrt(3)/6) * result.translate_matrix()
-			aux.append(Coord(*result.translate_matrix().matrix[0][:-1]))
+			aux.append(Coord(*result.matrix[0][:-1]))
 
 		self.coords3d = aux
-		self.coords = list(map(lambda x: x.project(), self.coords3d))
+
+		if mode == 'perspective':
+			aux_projection = []
+			for coord in self.coords3d:
+				w = coord.z / cop_distance
+				if (w == 0):
+					aux_projection = self.coords3d
+					break
+				new_coord = Coord(coord.x/w, coord.y/w, cop_distance)
+				aux_projection.append(new_coord)
+			self.coords = aux_projection
+			self.translate(0, 0, -cop_distance)
+		else:
+			self.coords = list(map(lambda x: x.project(), self.coords3d))
 
 	def center_scale(self, Sx, Sy, Sz):
 		self.get_center()
