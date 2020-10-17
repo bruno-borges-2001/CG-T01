@@ -46,6 +46,15 @@ class Matrix:
         else:
             self.matrix = values
 
+    def translate_matrix(self):
+        aux = []
+        for i in range(self.width):
+            aux_column = []
+            for j in range(self.height):
+                aux_column.append(self.matrix[j][i])
+            aux.append(aux_column)
+        return Matrix(self.width, self.height, aux)
+
     def createEmptyMatrix(self):
         self.matrix = [[0 for j in range(self.width)]
                        for i in range(self.height)]
@@ -509,6 +518,10 @@ class GraphicObject3D(GraphicObject):
         self.get_center()
 
     def clip(self):
+        for coord in self.coords3d:
+            if (coord.z <= 0):
+                self.clipped = []
+                return
         aux = []
         for edge in self.edges:
             p1 = self.coords[edge[0]]
@@ -533,23 +546,34 @@ class GraphicObject3D(GraphicObject):
         if (self.normalized):
             self.clip()
 
-    def projection(self, vrp, vpn, teta_x, teta_y, mode):
+    def projection(self, vrp, vpn, teta_x, teta_y, mode, cop_distance=0):
         if mode == 'parallel':
             self.translate(-vrp.x, -vrp.y, -vrp.z)
         else:
-            self.translate(-vrp.x, -vrp.y, -100)
+            self.translate(-vrp.x, -vrp.y, -vrp.z + cop_distance)
 
         rot_x = CalculationMatrix("rx3D", teta_x)
         rot_y = CalculationMatrix("ry3D", teta_y)
         aux = []
         for coord in self.coords3d:
             result = CalculationMatrix('c3d', coord.to_list()) * rot_x * rot_y
-            if mode == 'perspective':
-                result *= CalculationMatrix('Mper', -100)
             aux.append(Coord(*result.matrix[0][:-1]))
 
         self.coords3d = aux
-        self.coords = list(map(lambda x: x.project(), self.coords3d))
+
+        if mode == 'perspective':
+            aux_projection = []
+            for coord in self.coords3d:
+                w = coord.z / cop_distance
+                if (w == 0):
+                    aux_projection = self.coords3d
+                    break
+                new_coord = Coord(coord.x/w, coord.y/w, cop_distance)
+                aux_projection.append(new_coord)
+            self.coords = aux_projection
+            self.translate(0, 0, -cop_distance)
+        else:
+            self.coords = list(map(lambda x: x.project(), self.coords3d))
 
     def center_scale(self, Sx, Sy, Sz):
         self.get_center()
@@ -582,6 +606,10 @@ class GraphicObject3D(GraphicObject):
                 CalculationMatrix('s3D', [Sx, Sy, Sz])
             aux.append(Coord(*result.matrix[0]))
         self.coords3d = aux
+
+    def return_center(self):
+        self.get_center()
+        return self.center
 
     def rotate(self, Dx, Dy, Dz, teta):
         self.translate(-Dx, -Dy, -Dz)
@@ -662,86 +690,3 @@ class GraphicObject3D(GraphicObject):
                 CalculationMatrix('t3D', [Cx, Cy, Cz])
             aux.append(Coord(*result.matrix[0]))
         self.coords3d = aux
-
-# class GObject:
-
-#     def __init__(self, name, coords, edges, color, shape):
-#         self.name = name
-#         self.color = color
-#         self.coords = coords
-#         self.edges = edges
-#         self.shape = shape
-
-#         self.angle = 90
-
-#         self.get_center()
-
-#     def translate(self, Tx, Ty, Tz=0):
-#         translate_matrix = CalculationMatrix('t3d', [Tx, Ty, Tz])
-
-#         aux = []
-#         for coord in self.coords:
-#             result = CalculationMatrix(
-#                 'c3d', coord.to_list()) * translate_matrix
-#             aux.append(Coord(*result.matrix[0][:-1]))
-#         self.coords = aux
-
-#     def scale(self, Sx, Sy, Sz=0):
-#         scale_matrix = CalculationMatrix('s3d', [Sx, Sy, Sz])
-
-#         aux = []
-#         for coord in self.coords:
-#             result = CalculationMatrix(
-#                 'c3d', coord.to_list()) * scale_matrix
-#             aux.append(Coord(*result.matrix[0][:-1]))
-#         self.coords = aux
-
-#     def center_scale(self, Sx, Sy, Sz=0):
-#         self.get_center()
-
-#         self.translate(-self.center.x, -self.center.y, -self.center.z)
-#         self.scale(Sx, Sy, Sz)
-#         self.translate(self.center.x, self.center.y, self.center.z)
-
-#     def rotate(self, Dx, Dy, Dz=0, teta=15):
-#         self.get_center()
-#         self.translate(-Dx, -Dy, -Dz)
-#         # TODO descobrir angulo do eixo arbitrário
-#         angle_x = self.center.x/self.center.y
-#         return_angle_x = 360 - angle_x
-
-#         angle_z = self.center.z/self.center.z
-#         return_angle_z = 360 - angle_z
-
-#         rotation_x_matrix = CalculationMatrix('rx3D', angle_x)
-#         rotation_z_matrix = CalculationMatrix('rz3D', angle_z)
-#         return_x_matrix = CalculationMatrix('rx3D', return_angle_x)
-#         return_z_matrix = CalculationMatrix('rz3D', return_angle_z)
-
-#         aux = []
-#         for coord in self.coords:
-#             result = CalculationMatrix('c', coord.to_list()) * rotation_x_matrix * rotation_z_matrix * \
-#                 CalculationMatrix('ry3D', teta) * \
-#                 return_z_matrix * return_x_matrix
-#             aux.append(Coord(*result.matrix[0][:-1]))
-#         self.coords = aux
-
-#         self.translate(Dx, Dy, Dz)
-
-#     def get_center(self):
-#         center_x = 0
-#         center_y = 0
-#         center_z = 0
-
-#         for coord in self.coords3d:
-#             center_x += coord.x
-#             center_y += coord.y
-#             center_z += coord.z
-
-#         self.center = Coord(center_x / (len(self.coords3d)),
-#                             center_y / (len(self.coords3d)),
-#                             center_z / (len(self.coords3d)))
-
-#     def return_center(self):
-#         self.get_center()
-#         return self.center
