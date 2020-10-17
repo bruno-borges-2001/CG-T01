@@ -52,8 +52,10 @@ class App:
 
         self.window = GraphicObject3D(
             "Window", [Coord(0, 0)], [], COLORS["RED"])
-        self.normal_window = GraphicObject3D("NomalWindow", [
-            Coord(-1, -1, 0), Coord(1, -1, 0), Coord(1, 1, 0), Coord(-1, 1, 0)], [[0, 1], [1, 2], [2, 3], [3, 0]], COLORS["RED"])
+        self.ref_window = deepcopy(self.window)
+
+        self.normal_window = GraphicObject("NomalWindow", [
+            Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)], COLORS["RED"])
         self.viewport = GraphicObject(
             "Viewport", [Coord(0, 0)], COLORS["RED"])
 
@@ -126,6 +128,8 @@ class App:
             Coord(XWMAX, YWMIN)
         ]
 
+        # self.ref_window.coords3d = deepcopy(self.window.coords3d)
+
         self.viewport.coords = [
             Coord(XWMIN + self.padding, YWMIN + self.padding),
             Coord(XWMIN + self.padding, YWMAX - self.padding),
@@ -172,7 +176,7 @@ class App:
         self.IO.export_obh(self.display_file, COLORS)
 
     def generate_scn_matrix(self):
-        window_center = self.window.return_center()
+        window_center = self.ref_window.return_center()
 
         # translation_matrix = CalculationMatrix(
         # 	't', [-(window_center.x), -(window_center.y)])
@@ -197,17 +201,17 @@ class App:
 
     def get_window_height(self):
         return sqrt(
-            (self.window.coords3d[1].x-self.window.coords3d[0].x)**2 +
-            (self.window.coords3d[1].y-self.window.coords3d[0].y)**2 +
-            (self.window.coords3d[1].z-self.window.coords3d[0].z)**2
+            (self.window.coords3d[3].x-self.window.coords3d[0].x)**2 +
+            (self.window.coords3d[3].y-self.window.coords3d[0].y)**2 +
+            (self.window.coords3d[3].z-self.window.coords3d[0].z)**2
         )
         # return self.window.coords3d[2].y - self.window.coords3d[0].y
 
     def get_window_width(self):
         return sqrt(
-            (self.window.coords3d[3].x-self.window.coords3d[0].x)**2 +
-            (self.window.coords3d[3].y-self.window.coords3d[0].y)**2 +
-            (self.window.coords3d[3].z-self.window.coords3d[0].z)**2
+            (self.window.coords3d[1].x-self.window.coords3d[0].x)**2 +
+            (self.window.coords3d[1].y-self.window.coords3d[0].y)**2 +
+            (self.window.coords3d[1].z-self.window.coords3d[0].z)**2
         )
 
     def get_translate_values(self, direction):
@@ -321,16 +325,48 @@ class App:
             Cx = -self.get_window_height() * 0.1
         elif (direction == 'right'):
             Cx = self.get_window_height() * 0.1
-        self.window.translate(Cx, Cy, 0)
+        # self.window.translate(Cx, Cy, 0)
+        self.ref_window.translate(Cx, Cy, 0)
         self.log.insert(0, "Window moved " + direction)
         self.draw()
 
     def normalize_display_file(self):
+        scn_matrix = self.generate_scn_matrix()
         graphic_objects = deepcopy(self.display_file)
 
         # self.parallel_projection()
-        # self.perspective_projection()
-        vrp = deepcopy(self.window.return_center())
+        self.perspective_projection(graphic_objects)
+
+        self.display_file_normalized = []
+
+        for graphic_object in graphic_objects:
+            aux = []
+            for coord in graphic_object.coords:
+                result = CalculationMatrix('c3d', coord.to_list()) * scn_matrix
+                aux.append(Coord(*result.matrix[0]))
+            graphic_object.coords = aux
+            graphic_object.normalized = True
+            self.display_file_normalized.append(graphic_object)
+
+    def parallel_projection(self):
+        vrp = self.window.return_center()
+        vrpt = Coord(*(CalculationMatrix('c3d', vrp.to_list()) *
+                       CalculationMatrix('t3D', (vrp * -1).to_list())).matrix[0][:-1])
+        p1 = vrpt - self.window.coords3d[0] - vrp
+        p2 = self.window.coords3d[1] - vrp - vrpt
+        vpn = Coord(p1.y * p2.z - p1.z * p2.y, p1.z * p2.x -
+                    p1.x * p2.z, p1.x * p2.y - p1.y * p2.x)
+        teta_x = atan(vpn.y / vpn.z)
+        teta_y = atan(vpn.x / vpn.z)
+        self.window.projection(vrp, vpn, teta_x, teta_y, 'parallel')
+        for obj in self.display_file:
+            if (type(obj) is GraphicObject3D):
+                obj.projection(vrp, vpn, teta_x, teta_y, 'parallel')
+
+    def perspective_projection(self, display_file):
+        vision_angle = 120
+        cop_distance = abs(self.get_window_width() / tan(vision_angle))
+        vrp = self.window.return_center()
         vrpt = Coord(*(CalculationMatrix('c3d', vrp.to_list()) *
                        CalculationMatrix('t3D', (vrp * -1).to_list())).matrix[0][:-1])
         p1 = vrpt - deepcopy(self.window.coords3d[0]) - vrp
@@ -339,63 +375,12 @@ class App:
                     p1.x * p2.z, p1.x * p2.y - p1.y * p2.x)
         teta_x = atan(vpn.y / vpn.z)
         teta_y = atan(vpn.x / vpn.z)
-
-        vision_angle = 120
-        cop_distance = abs(self.get_window_width() / tan(vision_angle))
         self.window.projection(vrp, vpn, teta_x, teta_y,
                                'perspective', cop_distance)
-        for obj in graphic_objects:
+        for obj in display_file:
             if (type(obj) is GraphicObject3D):
                 obj.projection(vrp, vpn, teta_x, teta_y,
                                'perspective', cop_distance)
-
-        scn_matrix = self.generate_scn_matrix()
-        self.display_file_normalized = []
-        for graphic_object in graphic_objects:
-            aux = []
-            for coord in graphic_object.coords:
-                result = CalculationMatrix(
-                    'c3d', coord.to_list()) * scn_matrix
-                aux.append(Coord(*result.matrix[0]))
-            graphic_object.coords = aux
-            graphic_object.normalized = True
-            self.display_file_normalized.append(graphic_object)
-
-    # def parallel_projection(self):
-    #     vrp = self.window.return_center()
-    #     vrpt = Coord(*(CalculationMatrix('c3d', vrp.to_list()) *
-    #                    CalculationMatrix('t3D', (vrp * -1).to_list())).matrix[0][:-1])
-    #     p1 = vrpt - self.window.coords3d[0] - vrp
-    #     p2 = self.window.coords3d[1] - vrp - vrpt
-    #     vpn = Coord(p1.y * p2.z - p1.z * p2.y, p1.z * p2.x -
-    #                 p1.x * p2.z, p1.x * p2.y - p1.y * p2.x)
-    #     teta_x = atan(vpn.y / vpn.z)
-    #     teta_y = atan(vpn.x / vpn.z)
-    #     self.window.projection(vrp, vpn, teta_x, teta_y, 'parallel')
-    #     for obj in self.display_file:
-    #         if (type(obj) is GraphicObject3D):
-    #             obj.projection(vrp, vpn, teta_x, teta_y, 'parallel')
-
-    # def perspective_projection(self):
-    #     vrp = deepcopy(self.window.return_center())
-    #     vrpt = Coord(*(CalculationMatrix('c3d', vrp.to_list()) *
-    #                    CalculationMatrix('t3D', (vrp * -1).to_list())).matrix[0][:-1])
-    #     p1 = vrpt - deepcopy(self.window.coords3d[0]) - vrp
-    #     p2 = deepcopy(self.window.coords3d[1]) - vrp - vrpt
-    #     vpn = Coord(p1.y * p2.z - p1.z * p2.y, p1.z * p2.x -
-    #                 p1.x * p2.z, p1.x * p2.y - p1.y * p2.x)
-    #     teta_x = atan(vpn.y / vpn.z)
-    #     teta_y = atan(vpn.x / vpn.z)
-
-    #     vision_angle = 120
-    #     cop_distance = abs((self.get_window_width() / 2) /
-    #                        tan(vision_angle / 2))
-    #     self.window.projection(vrp, vpn, teta_x, teta_y,
-    #                            'perspective', cop_distance)
-    #     for obj in self.display_file:
-    #         if (type(obj) is GraphicObject3D):
-    #             obj.projection(vrp, vpn, teta_x, teta_y,
-    #                            'perspective', cop_distance)
 
     def remove_object(self):
         self.log.insert(
@@ -458,17 +443,11 @@ class App:
 
         self.canvas.bind("<Configure>", self.check)
 
-        # Button(add_and_remove_container, text="Adicionar Objeto",
-        #     command=self.add_object).pack(side=LEFT)
-
         Button(add_and_remove_container, text="Adicionar Objeto 3D",
                command=self.add_object_3D).pack(side=LEFT)
 
         Button(add_and_remove_container, text="Remover Objeto",
                command=self.remove_object).pack(side=RIGHT)
-
-        # Button(container_3d, text="Adicionar Objeto 3D",
-        #     command=self.add_object_3D).pack(side=BOTTOM)
 
         Button(up_container, text="↑",
                command=lambda: self.handle_translation('up')).pack(side=TOP)

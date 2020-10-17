@@ -79,6 +79,15 @@ class Matrix:
                         other.matrix[k][j]
         return result
 
+    def __str__(self):
+        string = ""
+        for line in self.matrix:
+            for el in line:
+                string += str(el)
+                string += " "
+            string += "\n"
+        return string
+
 
 class CalculationMatrix(Matrix):
 
@@ -518,8 +527,8 @@ class GraphicObject3D(GraphicObject):
         self.get_center()
 
     def clip(self):
-        for coord in self.coords3d:
-            if (coord.z <= 0):
+        for coord in self.coords:
+            if (coord.z < 0):
                 self.clipped = []
                 return
         aux = []
@@ -545,6 +554,25 @@ class GraphicObject3D(GraphicObject):
     def clip_curve(self):
         if (self.normalized):
             self.clip()
+
+    # def projection(self, vrp, vpn, teta_x, teta_y, mode, width=0):
+    # 	if mode == 'parallel':
+    # 		self.translate(-vrp.x, -vrp.y, -vrp.z)
+    # 	else:
+    # 		self.translate(-vrp.x, -vrp.y, width * sqrt(3) / 6 - vrp.z)
+
+    # 	rot_x = CalculationMatrix("rx3D", teta_x)
+    # 	rot_y = CalculationMatrix("ry3D", teta_y)
+    # 	aux = []
+    # 	for coord in self.coords3d:
+    # 		result = CalculationMatrix('c3d', coord.to_list()) * rot_x * rot_y
+    # 		if mode == 'perspective':
+    # 			result = CalculationMatrix('Mper', width * sqrt(3)/6) * result.translate_matrix()
+    # 		aux.append(Coord(*result.translate_matrix().matrix[0][:-1]))
+
+    # 	self.coords3d = aux
+    # 	self.coords = list(map(lambda x: x.project(), self.coords3d))
+    # 	self.translate(0,0, width * sqrt(3)/6)
 
     def projection(self, vrp, vpn, teta_x, teta_y, mode, cop_distance=0):
         if mode == 'parallel':
@@ -597,7 +625,7 @@ class GraphicObject3D(GraphicObject):
                             center_z / (len(self.coords3d)))
 
     def inside(self, coord):
-        return abs(coord.x) <= 1 and abs(coord.y) <= 1 and abs(coord.z) <= 1
+        return abs(coord.x) <= 1 and abs(coord.y) <= 1
 
     def scale(self, Sx, Sy, Sz):
         aux = []
