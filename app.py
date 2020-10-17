@@ -396,8 +396,8 @@ class App:
 		add_and_remove_container = Frame(function_container)
 		add_and_remove_container.pack(side=TOP, pady=10)
 
-		container_3d = Frame(function_container)
-		container_3d.pack(side=TOP)
+		# container_3d = Frame(function_container)
+		# container_3d.pack(side=TOP)
 
 		Label(function_container,
 			  text="Window/Objeto (selecione na listbox)", width=30).pack(side=TOP, pady=10)
@@ -431,14 +431,14 @@ class App:
 
 		self.canvas.bind("<Configure>", self.check)
 
-		Button(add_and_remove_container, text="Adicionar Objeto",
-			   command=self.add_object).pack(side=LEFT)
+		Button(add_and_remove_container, text="Adicionar Objeto 3D",
+			   command=self.add_object_3D).pack(side=LEFT)
+		# Button(add_and_remove_container, text="Adicionar Objeto",
+		# 	   command=self.add_object).pack(side=LEFT)
 
 		Button(add_and_remove_container, text="Remover Objeto",
 			   command=self.remove_object).pack(side=RIGHT)
 
-		Button(container_3d, text="Adicionar Objeto 3D",
-			   command=self.add_object_3D).pack(side=BOTTOM)
 
 		Button(up_container, text="↑",
 			   command=lambda: self.handle_translation('up')).pack(side=TOP)
