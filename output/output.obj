@@ -1,7 +1,18 @@
 mtllib libraries.mtl
 
+<<<<<<< HEAD
 v 0.0 0.0 0.0
 o a
 usemtl BLACK
 p -1
+=======
+v 347.01 -102.45 0.0
+v 358.91 -93.66 0.0
+v 254.29 -97.19 0.0
+v 273.21 -89.24 0.0
+v 307.57 -10.52 0.0
+o piramide
+usemtl BLACK
+
+>>>>>>> 00236c8e8797009f92a73091a8ab32ad9277de95
 
