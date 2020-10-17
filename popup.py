@@ -311,8 +311,12 @@ class Object3DPopup:
         if (coord1 == coord2):
             return
         edge = [coord1, coord2]
+
+        if ([coord1, coord2] in self.edges or [coord2, coord1] in self.edges):
+                return
         self.edges.append(edge)
-        self.edges_listbox.insert(END, str(coord1) + " -> " + str(coord2))
+        self.edges_listbox.insert(
+            END, str(self.new_object_coords[coord1]) + " -> " + str(self.new_object_coords[coord2]))
 
     def add_object_on_screen(self):
         self.on_submit(self.new_object_type.get(),
