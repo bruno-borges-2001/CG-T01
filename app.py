@@ -66,6 +66,8 @@ class App:
         self.height = 0
         self.width = 0
 
+        self.transformed = False
+
         # RENDER / UPDATE
         self.render()
         self.root.update_idletasks()
@@ -128,6 +130,8 @@ class App:
             Coord(XWMAX, YWMIN)
         ]
 
+        self.ref_window.coords3d = [self.window.return_center()]
+
         # self.ref_window.coords3d = deepcopy(self.window.coords3d)
 
         self.viewport.coords = [
@@ -147,6 +151,9 @@ class App:
             aux += coord.to_list()[:-1]
         self.canvas.create_polygon(
             aux, tags="viewport", outline=self.viewport.color, fill="")
+        if (not self.transformed):
+                self.transformed = True
+                self.ref_window.coords3d = [self.window.return_center()]
         for obj in self.display_file_show:
             for coords in obj.clipped:
                 if (len(coords) > 2):
@@ -366,15 +373,15 @@ class App:
     def perspective_projection(self, display_file):
         vision_angle = 120
         cop_distance = abs(self.get_window_width() / tan(vision_angle))
-        vrp = self.window.return_center()
+        vrp = self.ref_window.return_center()
         vrpt = Coord(*(CalculationMatrix('c3d', vrp.to_list()) *
                        CalculationMatrix('t3D', (vrp * -1).to_list())).matrix[0][:-1])
         p1 = vrpt - deepcopy(self.window.coords3d[0]) - vrp
         p2 = deepcopy(self.window.coords3d[1]) - vrp - vrpt
         vpn = Coord(p1.y * p2.z - p1.z * p2.y, p1.z * p2.x -
                     p1.x * p2.z, p1.x * p2.y - p1.y * p2.x)
-        teta_x = atan(vpn.y / vpn.z)
-        teta_y = atan(vpn.x / vpn.z)
+        teta_x = atan(vpn.y / vpn.z) if vpn.z != 0 else 0
+        teta_y = atan(vpn.x / vpn.z) if vpn.z != 0 else 0
         self.window.projection(vrp, vpn, teta_x, teta_y,
                                'perspective', cop_distance)
         for obj in display_file:
