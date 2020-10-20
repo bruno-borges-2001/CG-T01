@@ -546,13 +546,17 @@ class GraphicObject:
 
 class GraphicObject3D(GraphicObject):
 
-    def __init__(self, name, coords, edges, color, typeF=None, ready=False):
+    def __init__(self, name, coords, edges, color, typeF=None, ready=False, dimensions=[]):
         self.coords3d = coords
         self.edges = edges
         super().__init__(name, coords, color, False, typeF if typeF else '3d', ready)
 
         self.angle_x = 0
         self.angle_z = 0
+
+        if (typeF == "b_spline_curve"):
+            self.mesh_height = dimensions[0]
+            self.mesh_width = dimensions[1]
 
         self.get_center()
 

@@ -82,7 +82,7 @@ class App:
         self.add_object_3D_popup = Object3DPopup(
             self.root, self.add_object_on_screen, COLORS)
 
-    def add_object_on_screen(self, object_type, name, coords, color, edges=None, object_3D=False):
+    def add_object_on_screen(self, object_type, name, coords, color, edges=None, object_3D=False, dimensions=[]):
         if (len(name) > 0 and object_type >= 0):
             if (object_type == 2):
                 typeF = "curve"
@@ -107,13 +107,12 @@ class App:
                 if (edges and len(edges) == 0 and object_type != 0 and typeF != "curve"):
                     return
                 new_object = GraphicObject3D(
-                    name, coords, edges, COLORS[color], typeF)
+                    name, coords, edges, COLORS[color], typeF, dimensions)
                 self.listbox.insert(END, new_object.name)
                 self.log.insert(0, "Object " + new_object.name + " added")
                 self.display_file.append(new_object)
                 self.draw()
                 self.add_object_3D_popup.destroy()
-
 
     def check(self, event):
         self.height = self.canvas.winfo_height()
@@ -153,8 +152,8 @@ class App:
         self.canvas.create_polygon(
             aux, tags="viewport", outline=self.viewport.color, fill="")
         if (not self.transformed):
-                self.transformed = True
-                self.ref_window.coords3d = [self.window.return_center()]
+            self.transformed = True
+            self.ref_window.coords3d = [self.window.return_center()]
         for obj in self.display_file_show:
             for coords in obj.clipped:
                 if (len(coords) > 2):

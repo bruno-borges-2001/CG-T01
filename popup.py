@@ -144,9 +144,9 @@ class Object2DPopup:
         self.radio_buttons = [Radiobutton(top_container, text="Ponto",
                                           variable=self.new_object_type, value=0),
                               Radiobutton(top_container, text="Linha",
-                                                              variable=self.new_object_type, value=1),
+                                          variable=self.new_object_type, value=1),
                               Radiobutton(top_container, text="Curva (Bezier)",
-                                                              variable=self.new_object_type, value=2),
+                                          variable=self.new_object_type, value=2),
                               Radiobutton(bottom_container, text="Curva (B-Spline)",
                                           variable=self.new_object_type, value=3),
                               Radiobutton(bottom_container, text="Polígono",
@@ -233,7 +233,47 @@ class Object3DPopup:
         self.color_combobox.pack(side=LEFT)
         self.color_combobox.current(0)
 
-        entry_container = Frame(self.root)
+        radio_container = Frame(self.root)
+        top_container = Frame(radio_container)
+        bottom_container = Frame(radio_container)
+
+        top_container.pack(side=TOP)
+        bottom_container.pack(side=BOTTOM)
+
+        self.new_object_type = IntVar()
+        self.new_object_type.set(-1)
+
+        self.radio_buttons = [Radiobutton(top_container, text="Ponto",
+                                          variable=self.new_object_type, value=0, command=self.update_render),
+                              Radiobutton(top_container, text="Linha",
+                                          variable=self.new_object_type, value=1, command=self.update_render),
+                              Radiobutton(top_container, text="Mesh (Bezier)",
+                                          variable=self.new_object_type, value=2, command=self.update_render),
+                              Radiobutton(bottom_container, text="Mesh (B-Spline)",
+                                          variable=self.new_object_type, value=3, command=self.update_render),
+                              Radiobutton(bottom_container, text="Forma",
+                                          variable=self.new_object_type, value=4, command=self.update_render)]
+
+        for rb in self.radio_buttons:
+            rb.pack(side=LEFT)
+
+            # rb.configure(state=DISABLED)
+        radio_container.pack(side=TOP)
+
+        self.container = Frame(self.root)
+        self.container.pack(fill=BOTH)
+        self.update_render()
+
+    def update_render(self):
+        self.container.destroy()
+
+        self.container = Frame(self.root)
+        self.container.pack(fill=BOTH)
+
+        if (self.new_object_type.get() == -1):
+            return
+
+        entry_container = Frame(self.container)
         entry_container.pack(side=TOP, pady=5)
 
         entry_x_container = Frame(entry_container)
@@ -254,53 +294,61 @@ class Object3DPopup:
         Entry(entry_y_container, textvariable=self.point_y).pack(side=LEFT)
         Label(entry_z_container, text="Z").pack(side=LEFT)
         Entry(entry_z_container, textvariable=self.point_z).pack(side=LEFT)
+        buttons_container = Frame(self.container)
 
-        buttons_container = Frame(self.root)
         buttons_container.pack(side=TOP)
         Button(buttons_container, text="Adicionar Ponto",
                command=self.add_point).pack()
+
+        Button(buttons_container, text="Remover Ponto",
+               command=self.remove_point).pack()
+
+        self.coord_counter = IntVar()
+        self.coord_counter.set(len(self.new_object_coords))
+
+        Label(buttons_container, textvariable=self.coord_counter).pack()
 
         list_container = Frame(buttons_container)
         list_container.pack(side=TOP)
 
         self.new_object_listbox = Listbox(list_container, exportselection=0)
-        self.new_object_listbox_2 = Listbox(list_container, exportselection=0)
-
         self.new_object_listbox.pack(pady=5, side=LEFT, padx=10)
-        self.new_object_listbox_2.pack(pady=5, side=LEFT)
 
-        Button(buttons_container, text="Adicionar Aresta",
-               command=self.add_edge).pack()
+        self.new_object_listbox_2 = Listbox(list_container, exportselection=0)
+        if (self.new_object_type.get() in [1, 4]):
+            self.new_object_listbox_2.pack(pady=5, side=LEFT)
 
-        self.edges_listbox = Listbox(buttons_container, width=50)
-        self.edges_listbox.pack(pady=5, side=TOP)
+            Button(buttons_container, text="Adicionar Aresta",
+                   command=self.add_edge).pack()
 
-        self.new_object_type = IntVar()
-        self.new_object_type.set(-1)
+            Button(buttons_container, text="Remover Aresta",
+                   command=self.remove_edge).pack()
 
-        radio_container = Frame(buttons_container)
-        top_container = Frame(radio_container)
-        bottom_container = Frame(radio_container)
+            self.edges_listbox = Listbox(buttons_container, width=50)
+            self.edges_listbox.pack(pady=5, side=TOP)
 
-        top_container.pack(side=TOP)
-        bottom_container.pack(side=BOTTOM)
-        self.radio_buttons = [Radiobutton(top_container, text="Ponto",
-                                          variable=self.new_object_type, value=0),
-                              Radiobutton(top_container, text="Linha",
-                                                              variable=self.new_object_type, value=1),
-                              Radiobutton(top_container, text="Curva (Bezier)",
-                                                              variable=self.new_object_type, value=2),
-                              Radiobutton(bottom_container, text="Curva (B-Spline)",
-                                          variable=self.new_object_type, value=3),
-                              Radiobutton(bottom_container, text="Forma",
-                                          variable=self.new_object_type, value=4)]
+        if (self.new_object_type.get() == 3):
+            self.mesh_height = IntVar()
+            self.mesh_width = IntVar()
+            self.mesh_height.set(4)
+            self.mesh_width.set(4)
 
-        for rb in self.radio_buttons:
-            rb.pack(side=LEFT)
+            dimension_entry_container = Frame(buttons_container)
+            dimension_entry_container.pack(side=TOP, pady=10)
 
-            rb.configure(state=DISABLED)
+            entry_height_container = Frame(dimension_entry_container)
+            entry_height_container.pack(side=LEFT)
 
-        radio_container.pack(side=TOP)
+            Label(entry_height_container, text="Altura").pack(side=LEFT)
+            Entry(entry_height_container,
+                  textvariable=self.mesh_height).pack(side=LEFT)
+
+            entry_width_container = Frame(dimension_entry_container)
+            entry_width_container.pack(side=LEFT)
+
+            Label(entry_width_container, text="Largura").pack(side=LEFT)
+            Entry(entry_width_container,
+                  textvariable=self.mesh_width).pack(side=LEFT)
 
         Button(buttons_container, text="Adicionar objeto",
                command=self.add_object_on_screen).pack()
@@ -319,8 +367,22 @@ class Object3DPopup:
             END, str(self.new_object_coords[coord1]) + " -> " + str(self.new_object_coords[coord2]))
 
     def add_object_on_screen(self):
+        obj_type = self.new_object_type.get()
+        if (obj_type == 2):
+            if (len(self.new_object_coords) % 16 != 0):
+                return
+        if (obj_type == 3):
+            if (self.mesh_height * self.mesh_width != self.new_object_coords):
+                return
+            if (self.mesh_height < 4 or self.mesh_height > 20):
+                return
+            if (self.mesh_width < 4 or self.mesh_width > 20):
+                return
+        if (obj_type in [1, 4]):
+            if (len(self.edges) == 0):
+                return
         self.on_submit(self.new_object_type.get(),
-                       self.object_name.get(), self.new_object_coords, self.color_combobox.get(), self.edges, True)
+                       self.object_name.get(), self.new_object_coords, self.color_combobox.get(), self.edges, True, [self.mesh_height, self.mesh_width] if obj_type == 3 else [])
 
     def add_point(self):
         x = self.point_x.get()
@@ -335,28 +397,38 @@ class Object3DPopup:
         self.point_y.set(0)
         self.point_z.set(0)
 
-        self.configureRadioButtons()
+        self.coord_counter.set(len(self.new_object_coords))
 
-    def configureRadioButtons(self):
-        self.new_object_type.set(-1)
-        for rb in self.radio_buttons:
-            rb.configure(state=DISABLED)
-        length = len(self.new_object_coords)
-        if (length == 1):
-            self.radio_buttons[0].configure(state=ACTIVE)
-        elif (length == 2):
-            self.radio_buttons[1].configure(state=ACTIVE)
-        elif (length == 3):
-            self.radio_buttons[1].configure(state=ACTIVE)
-            self.radio_buttons[4].configure(state=ACTIVE)
-        elif (length >= 4):
-            self.radio_buttons[1].configure(state=ACTIVE)
-            # self.radio_buttons[3].configure(state=ACTIVE)
-            self.radio_buttons[4].configure(state=ACTIVE)
-            if (length >= 16):
-                if (length % 16 == 0):
-                    self.radio_buttons[2].configure(state=ACTIVE)
-                    self.radio_buttons[3].configure(state=ACTIVE)
+    def remove_point(self):
+        for i in self.new_object_listbox.curselection()[::-1]:
+            self.new_object_listbox.delete(i)
+            self.new_object_listbox_2.delete(i)
+
+    def remove_edge(self):
+        for i in self.edges_listbox.curselection()[::-1]:
+            self.edges_listbox.delete(i)
+            self.edges.pop(i)
+
+    # def configureRadioButtons(self):
+    #     self.new_object_type.set(-1)
+    #     for rb in self.radio_buttons:
+    #         rb.configure(state=DISABLED)
+    #     length = len(self.new_object_coords)
+    #     if (length == 1):
+    #         self.radio_buttons[0].configure(state=ACTIVE)
+    #     elif (length == 2):
+    #         self.radio_buttons[1].configure(state=ACTIVE)
+    #     elif (length == 3):
+    #         self.radio_buttons[1].configure(state=ACTIVE)
+    #         self.radio_buttons[4].configure(state=ACTIVE)
+    #     elif (length >= 4):
+    #         self.radio_buttons[1].configure(state=ACTIVE)
+    #         # self.radio_buttons[3].configure(state=ACTIVE)
+    #         self.radio_buttons[4].configure(state=ACTIVE)
+    #         if (length >= 16):
+    #             if (length % 16 == 0):
+    #                 self.radio_buttons[2].configure(state=ACTIVE)
+    #                 self.radio_buttons[3].configure(state=ACTIVE)
 
     def destroy(self):
         self.root.destroy()
