@@ -147,10 +147,10 @@ class CalculationMatrix(Matrix):
                 4, 1, [[values[0]], [values[1]], [values[2]], [values[3]]])
         elif module == 'G3D':
             super().__init__(
-                4, 4, [[values[0], values[1], values[2], values[3]], 
-                    [values[4], values[5], values[6], values[7]], 
-                    [values[8], values[9], values[10], values[11]],
-                    [values[12], values[13], values[14], values[15]]])
+                4, 4, [[values[0], values[1], values[2], values[3]],
+                       [values[4], values[5], values[6], values[7]],
+                       [values[8], values[9], values[10], values[11]],
+                       [values[12], values[13], values[14], values[15]]])
         elif module == 'delta':
             d = values
             d2 = pow(values, 2)
@@ -704,20 +704,23 @@ class GraphicObject3D(GraphicObject):
         curve_coords = []
         mb = CalculationMatrix('Mb', [])
         for i in range(1, floor(len(self.coords3d)/16) + 1):
-            xs = [self.coords3d[16*i-16].x, self.coords3d[16*i-15].x, self.coords3d[16*i-14].x, self.coords3d[16*i-13].x,
-                self.coords3d[16*i-12].x, self.coords3d[16*i-11].x, self.coords3d[16*i-10].x, self.coords3d[16*i-9].x,
-                self.coords3d[16*i-8].x, self.coords3d[16*i-7].x, self.coords3d[16*i-6].x, self.coords3d[16*i-5].x,
-                self.coords3d[16*i-4].x, self.coords3d[16*i-3].x, self.coords3d[16*i-2].x, self.coords3d[16*i-1].x]
+            # xs = [self.coords3d[16*i-16].x, self.coords3d[16*i-15].x, self.coords3d[16*i-14].x, self.coords3d[16*i-13].x,
+            #     self.coords3d[16*i-12].x, self.coords3d[16*i-11].x, self.coords3d[16*i-10].x, self.coords3d[16*i-9].x,
+            #     self.coords3d[16*i-8].x, self.coords3d[16*i-7].x, self.coords3d[16*i-6].x, self.coords3d[16*i-5].x,
+            #     self.coords3d[16*i-4].x, self.coords3d[16*i-3].x, self.coords3d[16*i-2].x, self.coords3d[16*i-1].x]
+            xs = [self.coords3d[16*i - j].x for j in range(16, 0, -1)]
 
-            ys = [self.coords3d[16*i-16].y, self.coords3d[16*i-15].y, self.coords3d[16*i-14].y, self.coords3d[16*i-13].y,
-                self.coords3d[16*i-12].y, self.coords3d[16*i-11].y, self.coords3d[16*i-10].y, self.coords3d[16*i-9].y,
-                self.coords3d[16*i-8].y, self.coords3d[16*i-7].y, self.coords3d[16*i-6].y, self.coords3d[16*i-5].y,
-                self.coords3d[16*i-4].y, self.coords3d[16*i-3].y, self.coords3d[16*i-2].y, self.coords3d[16*i-1].y]
+            # ys = [self.coords3d[16*i-16].y, self.coords3d[16*i-15].y, self.coords3d[16*i-14].y, self.coords3d[16*i-13].y,
+            #     self.coords3d[16*i-12].y, self.coords3d[16*i-11].y, self.coords3d[16*i-10].y, self.coords3d[16*i-9].y,
+            #     self.coords3d[16*i-8].y, self.coords3d[16*i-7].y, self.coords3d[16*i-6].y, self.coords3d[16*i-5].y,
+            #     self.coords3d[16*i-4].y, self.coords3d[16*i-3].y, self.coords3d[16*i-2].y, self.coords3d[16*i-1].y]
+            ys = [self.coords3d[16*i - j].y for j in range(16, 0, -1)]
 
-            zs = [self.coords3d[16*i-16].z, self.coords3d[16*i-15].z, self.coords3d[16*i-14].z, self.coords3d[16*i-13].z,
-                self.coords3d[16*i-12].z, self.coords3d[16*i-11].z, self.coords3d[16*i-10].z, self.coords3d[16*i-9].z,
-                self.coords3d[16*i-8].z, self.coords3d[16*i-7].z, self.coords3d[16*i-6].z, self.coords3d[16*i-5].z,
-                self.coords3d[16*i-4].z, self.coords3d[16*i-3].z, self.coords3d[16*i-2].z, self.coords3d[16*i-1].z]
+            # zs = [self.coords3d[16*i-16].z, self.coords3d[16*i-15].z, self.coords3d[16*i-14].z, self.coords3d[16*i-13].z,
+            #     self.coords3d[16*i-12].z, self.coords3d[16*i-11].z, self.coords3d[16*i-10].z, self.coords3d[16*i-9].z,
+            #     self.coords3d[16*i-8].z, self.coords3d[16*i-7].z, self.coords3d[16*i-6].z, self.coords3d[16*i-5].z,
+            #     self.coords3d[16*i-4].z, self.coords3d[16*i-3].z, self.coords3d[16*i-2].z, self.coords3d[16*i-1].z]
+            zs = [self.coords3d[16*i - j].z for j in range(16, 0, -1)]
 
             gbx = CalculationMatrix('G3D', xs)
             gby = CalculationMatrix('G3D', ys)
@@ -726,16 +729,19 @@ class GraphicObject3D(GraphicObject):
             x_composed = mb * gbx * mb
             y_composed = mb * gby * mb
             z_composed = mb * gbz * mb
-            
-            for s in range(0, 1030, 30):
+
+            step = 0.03
+
+            for s in range(0, 1001, int(step * 1000)):
                 aux = s / 1000
                 matrix_s = CalculationMatrix('T', aux)
-                for t in range(0, 1030, 30):
+                for t in range(0, 1001, int(step * 1000)):
                     aux = t / 1000
                     matrix_t = CalculationMatrix('T', aux).translate_matrix()
                     ptx = matrix_s * x_composed * matrix_t
                     pty = matrix_s * y_composed * matrix_t
                     ptz = matrix_s * z_composed * matrix_t
-                    coord = Coord(ptx.matrix[0][0], pty.matrix[0][0], ptz.matrix[0][0])
+                    coord = Coord(ptx.matrix[0][0],
+                                  pty.matrix[0][0], ptz.matrix[0][0])
                     curve_coords.append(coord)
         self.coords3d = curve_coords
