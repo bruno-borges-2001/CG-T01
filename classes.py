@@ -739,3 +739,86 @@ class GraphicObject3D(GraphicObject):
                     coord = Coord(ptx.matrix[0][0], pty.matrix[0][0], ptz.matrix[0][0])
                     curve_coords.append(coord)
         self.coords3d = curve_coords
+
+
+    def b_spline(self):
+        curve_coords = []
+        mbs = CalculationMatrix('Mbs', [])
+        
+        for i in range(1, floor(len(self.coords3d)/16) + 1):
+            xs = [self.coords3d[16*i-16].x, self.coords3d[16*i-12].x, self.coords3d[16*i-8].x, self.coords3d[16*i-4].x,
+                self.coords3d[16*i-15].x, self.coords3d[16*i-11].x, self.coords3d[16*i-7].x, self.coords3d[16*i-3].x,
+                self.coords3d[16*i-14].x, self.coords3d[16*i-10].x, self.coords3d[16*i-6].x, self.coords3d[16*i-2].x,
+                self.coords3d[16*i-13].x, self.coords3d[16*i-9].x, self.coords3d[16*i-5].x, self.coords3d[16*i-1].x]
+
+            ys = [self.coords3d[16*i-16].y, self.coords3d[16*i-15].y, self.coords3d[16*i-14].y, self.coords3d[16*i-13].y,
+                self.coords3d[16*i-12].y, self.coords3d[16*i-11].y, self.coords3d[16*i-10].y, self.coords3d[16*i-9].y,
+                self.coords3d[16*i-8].y, self.coords3d[16*i-7].y, self.coords3d[16*i-6].y, self.coords3d[16*i-5].y,
+                self.coords3d[16*i-4].y, self.coords3d[16*i-3].y, self.coords3d[16*i-2].y, self.coords3d[16*i-1].y]
+
+            zs = [self.coords3d[16*i-16].z, self.coords3d[16*i-15].z, self.coords3d[16*i-14].z, self.coords3d[16*i-13].z,
+                self.coords3d[16*i-12].z, self.coords3d[16*i-11].z, self.coords3d[16*i-10].z, self.coords3d[16*i-9].z,
+                self.coords3d[16*i-8].z, self.coords3d[16*i-7].z, self.coords3d[16*i-6].z, self.coords3d[16*i-5].z,
+                self.coords3d[16*i-4].z, self.coords3d[16*i-3].z, self.coords3d[16*i-2].z, self.coords3d[16*i-1].z]
+
+            gbx = CalculationMatrix('G3D', xs)
+            gby = CalculationMatrix('G3D', ys)
+            gbz = CalculationMatrix('G3D', zs)
+        
+        delta = 0.01
+        ns = 1 / delta
+        eds = CalculationMatrix('delta', delta)
+
+        nt = 1 / delta
+        edt = CalculationMatrix('delta', delta)
+        
+        # TODO: Calcular valores iniciais faltantes e chamar método forward_difference_surface
+
+    def forward_difference_surface(self, ns, nt, cx, cy, cz, eds, edt):
+        ddx = eds * cx * edt.translate()
+        ddy = eds * cy * edt.translate()
+        ddz = eds * cz * edt.translate()
+        i = 1
+        while (i < ns):
+            i += 1
+            self.forward_difference_curve(nt, 
+                ddx[0][0], ddx[0][1], ddx[0][2], ddx[0][3], 
+                ddy[0][0], ddy[0][1], ddy[0][2], ddy[0][3],
+                ddz[0][0], ddz[0][1], ddz[0][2], ddz[0][3])
+            # TODO: Somar linhas de DD
+        ddx = (eds * cx * edt.translate()).translate()
+        ddy = (eds * cy * edt.translate()).translate()
+        ddz = (eds * cz * edt.translate()).translate()
+        i = 1
+        while (i < nt):
+            i += 1
+            self.forward_difference_curve(nt, 
+                ddx[0][0], ddx[0][1], ddx[0][2], ddx[0][3], 
+                ddy[0][0], ddy[0][1], ddy[0][2], ddy[0][3],
+                ddz[0][0], ddz[0][1], ddz[0][2], ddz[0][3])
+            # TODO: Somar linhas de DD
+        
+
+    def forward_difference_curve(self, n, x, dx, d2x, d3x, y, dy, d2y, d3y, z, dz, d2z, d3z):
+        curve_coords = []
+        i = 1
+        curve_coords.append(Coord(x, y, z))
+        while (i < n):
+            i += 1
+
+            x += dx
+            dx += d2x
+            d2x += d3x
+
+            y += dy
+            dy += d2y
+            d2y += d3y
+
+            z += dz
+            dz += d2z
+            d2z += d3z
+
+            curve_coords.append(Coord(x, y, z))
+        return curve_coords
+
+        
