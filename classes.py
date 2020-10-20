@@ -555,25 +555,6 @@ class GraphicObject3D(GraphicObject):
         if (self.normalized):
             self.clip()
 
-    # def projection(self, vrp, vpn, teta_x, teta_y, mode, width=0):
-    # 	if mode == 'parallel':
-    # 		self.translate(-vrp.x, -vrp.y, -vrp.z)
-    # 	else:
-    # 		self.translate(-vrp.x, -vrp.y, width * sqrt(3) / 6 - vrp.z)
-
-    # 	rot_x = CalculationMatrix("rx3D", teta_x)
-    # 	rot_y = CalculationMatrix("ry3D", teta_y)
-    # 	aux = []
-    # 	for coord in self.coords3d:
-    # 		result = CalculationMatrix('c3d', coord.to_list()) * rot_x * rot_y
-    # 		if mode == 'perspective':
-    # 			result = CalculationMatrix('Mper', width * sqrt(3)/6) * result.translate_matrix()
-    # 		aux.append(Coord(*result.translate_matrix().matrix[0][:-1]))
-
-    # 	self.coords3d = aux
-    # 	self.coords = list(map(lambda x: x.project(), self.coords3d))
-    # 	self.translate(0,0, width * sqrt(3)/6)
-
     def projection(self, vrp, vpn, teta_x, teta_y, mode, cop_distance=0):
         if mode == 'parallel':
             self.translate(-vrp.x, -vrp.y, -vrp.z)
@@ -695,21 +676,11 @@ class GraphicObject3D(GraphicObject):
 
     def center_rotate(self, teta, axis):
         if (axis == 'x'):
-            # self.angle_x = 0
-            # self.angle_y = 90
-            # self.angle_z = 90
             self.rotate_x(*self.return_center().to_list(), teta)
         elif (axis == 'y'):
-            # self.angle_x = 90
-            # self.angle_y = 0
-            # self.angle_z = 90
             self.rotate_y(*self.return_center().to_list(), teta)
         elif (axis == 'z'):
-            # self.angle_x = 90
-            # self.angle_y = 90
-            # self.angle_z = 0
             self.rotate_z(*self.return_center().to_list(), teta)
-        # self.rotate(*self.return_center().to_list(), teta)
 
     def translate(self, Cx, Cy, Cz):
         aux = []
@@ -718,3 +689,32 @@ class GraphicObject3D(GraphicObject):
                 CalculationMatrix('t3D', [Cx, Cy, Cz])
             aux.append(Coord(*result.matrix[0]))
         self.coords3d = aux
+
+    def bezier(self):
+        curve_coords = []
+        mb = CalculationMatrix('Mb', [])
+        for i in range(1, floor(len(self.coords3d)/16) + 1):
+            gbx = [[self.coords[16*i-16].x, self.coords[16*i-15].x, self.coords[16*i-14].x, self.coords[16*i-13].x],
+                [self.coords[16*i-12].x, self.coords[16*i-11].x, self.coords[16*i-10].x, self.coords[16*i-9].x],
+                [self.coords[16*i-8].x, self.coords[16*i-7].x, self.coords[16*i-6].x, self.coords[16*i-5].x],
+                [self.coords[16*i-4].x, self.coords[16*i-3].x, self.coords[16*i-2].x, self.coords[16*i-1].x]]
+            gby = [[self.coords[16*i-16].y, self.coords[16*i-15].y, self.coords[16*i-14].y, self.coords[16*i-13].y],
+                [self.coords[16*i-12].y, self.coords[16*i-11].y, self.coords[16*i-10].y, self.coords[16*i-9].y],
+                [self.coords[16*i-8].y, self.coords[16*i-7].y, self.coords[16*i-6].y, self.coords[16*i-5].y],
+                [self.coords[16*i-4].y, self.coords[16*i-3].y, self.coords[16*i-2].y, self.coords[16*i-1].y]]
+            gbz = [[self.coords[16*i-16].z, self.coords[16*i-15].z, self.coords[16*i-14].z, self.coords[16*i-13].z],
+                [self.coords[16*i-12].z, self.coords[16*i-11].z, self.coords[16*i-10].z, self.coords[16*i-9].z],
+                [self.coords[16*i-8].z, self.coords[16*i-7].z, self.coords[16*i-6].z, self.coords[16*i-5].z],
+                [self.coords[16*i-4].z, self.coords[16*i-3].z, self.coords[16*i-2].z, self.coords[16*i-1].z]]
+            for s in range(0, 1005, 5):
+                aux = s / 1000
+                matrix_s = CalculationMatrix('T', aux)
+                for t in range(0, 1005, 5):
+                    aux = t / 1000
+                    matrix_t = CalculationMatrix('T', aux).translate_matrix()
+                    ptx = matrix_s * mb * gbx * mb * matrix_t
+                    pty = matrix_s * mb * gby * mb * matrix_t
+                    ptz = matrix_s * mb * gbz * mb * matrix_t
+                    coord = Coord(ptx.matrix[0][0], pty.matrix[0][0], ptz.matrix[0][0])
+                    curve_coords.append(coord)
+        self.coords3d = curve_coords
