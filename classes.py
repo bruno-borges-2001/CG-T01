@@ -46,6 +46,30 @@ class Matrix:
         else:
             self.matrix = values
 
+    def list_to_matrix(self, values):
+        self.matrix = []
+        for i in range(self.height):
+            self.matrix.append([])
+            for j in range(self.width):
+                self.matrix[-1].append(values[self.width * i + j])
+
+    def get_submatrix(self, start_i, start_j, height, width):
+        aux = []
+        for i in range(start_i, start_i + height, 1):
+            for j in range(start_j, start_j + width, 1):
+                aux.append(self.matrix[i][j])
+        matrix = Matrix(height, width)
+        matrix.list_to_matrix(aux)
+        return matrix
+
+    def return_submatrix_by_size(self, height, width):
+        output = []
+        for i in range(self.height - height):
+            for j in range(self.width - width):
+                output.append(self.get_submatrix(i, j, height, width))
+
+        return output
+
     def translate_matrix(self):
         aux = []
         for i in range(self.width):
@@ -746,38 +770,40 @@ class GraphicObject3D(GraphicObject):
                     curve_coords.append(coord)
         self.coords3d = curve_coords
 
-
     def b_spline(self):
         curve_coords = []
         mbs = CalculationMatrix('Mbs', [])
-        
+
         for i in range(1, floor(len(self.coords3d)/16) + 1):
-            xs = [self.coords3d[16*i-16].x, self.coords3d[16*i-12].x, self.coords3d[16*i-8].x, self.coords3d[16*i-4].x,
-                self.coords3d[16*i-15].x, self.coords3d[16*i-11].x, self.coords3d[16*i-7].x, self.coords3d[16*i-3].x,
-                self.coords3d[16*i-14].x, self.coords3d[16*i-10].x, self.coords3d[16*i-6].x, self.coords3d[16*i-2].x,
-                self.coords3d[16*i-13].x, self.coords3d[16*i-9].x, self.coords3d[16*i-5].x, self.coords3d[16*i-1].x]
+            # xs = [self.coords3d[16*i-16].x, self.coords3d[16*i-15].x, self.coords3d[16*i-14].x, self.coords3d[16*i-13].x,
+            #     self.coords3d[16*i-12].x, self.coords3d[16*i-11].x, self.coords3d[16*i-10].x, self.coords3d[16*i-9].x,
+            #     self.coords3d[16*i-8].x, self.coords3d[16*i-7].x, self.coords3d[16*i-6].x, self.coords3d[16*i-5].x,
+            #     self.coords3d[16*i-4].x, self.coords3d[16*i-3].x, self.coords3d[16*i-2].x, self.coords3d[16*i-1].x]
+            xs = [self.coords3d[16*i - j].x for j in range(16, 0, -1)]
 
-            ys = [self.coords3d[16*i-16].y, self.coords3d[16*i-15].y, self.coords3d[16*i-14].y, self.coords3d[16*i-13].y,
-                self.coords3d[16*i-12].y, self.coords3d[16*i-11].y, self.coords3d[16*i-10].y, self.coords3d[16*i-9].y,
-                self.coords3d[16*i-8].y, self.coords3d[16*i-7].y, self.coords3d[16*i-6].y, self.coords3d[16*i-5].y,
-                self.coords3d[16*i-4].y, self.coords3d[16*i-3].y, self.coords3d[16*i-2].y, self.coords3d[16*i-1].y]
+            # ys = [self.coords3d[16*i-16].y, self.coords3d[16*i-15].y, self.coords3d[16*i-14].y, self.coords3d[16*i-13].y,
+            #     self.coords3d[16*i-12].y, self.coords3d[16*i-11].y, self.coords3d[16*i-10].y, self.coords3d[16*i-9].y,
+            #     self.coords3d[16*i-8].y, self.coords3d[16*i-7].y, self.coords3d[16*i-6].y, self.coords3d[16*i-5].y,
+            #     self.coords3d[16*i-4].y, self.coords3d[16*i-3].y, self.coords3d[16*i-2].y, self.coords3d[16*i-1].y]
+            ys = [self.coords3d[16*i - j].y for j in range(16, 0, -1)]
 
-            zs = [self.coords3d[16*i-16].z, self.coords3d[16*i-15].z, self.coords3d[16*i-14].z, self.coords3d[16*i-13].z,
-                self.coords3d[16*i-12].z, self.coords3d[16*i-11].z, self.coords3d[16*i-10].z, self.coords3d[16*i-9].z,
-                self.coords3d[16*i-8].z, self.coords3d[16*i-7].z, self.coords3d[16*i-6].z, self.coords3d[16*i-5].z,
-                self.coords3d[16*i-4].z, self.coords3d[16*i-3].z, self.coords3d[16*i-2].z, self.coords3d[16*i-1].z]
+            # zs = [self.coords3d[16*i-16].z, self.coords3d[16*i-15].z, self.coords3d[16*i-14].z, self.coords3d[16*i-13].z,
+            #     self.coords3d[16*i-12].z, self.coords3d[16*i-11].z, self.coords3d[16*i-10].z, self.coords3d[16*i-9].z,
+            #     self.coords3d[16*i-8].z, self.coords3d[16*i-7].z, self.coords3d[16*i-6].z, self.coords3d[16*i-5].z,
+            #     self.coords3d[16*i-4].z, self.coords3d[16*i-3].z, self.coords3d[16*i-2].z, self.coords3d[16*i-1].z]
+            zs = [self.coords3d[16*i - j].z for j in range(16, 0, -1)]
 
             gbx = CalculationMatrix('G3D', xs)
             gby = CalculationMatrix('G3D', ys)
             gbz = CalculationMatrix('G3D', zs)
-        
+
         delta = 0.01
         ns = 1 / delta
         eds = CalculationMatrix('delta', delta)
 
         nt = 1 / delta
         edt = CalculationMatrix('delta', delta)
-        
+
         # TODO: Calcular valores iniciais faltantes e chamar método forward_difference_surface
 
     def forward_difference_surface(self, ns, nt, cx, cy, cz, eds, edt):
@@ -787,10 +813,10 @@ class GraphicObject3D(GraphicObject):
         i = 1
         while (i < ns):
             i += 1
-            self.forward_difference_curve(nt, 
-                ddx[0][0], ddx[0][1], ddx[0][2], ddx[0][3], 
-                ddy[0][0], ddy[0][1], ddy[0][2], ddy[0][3],
-                ddz[0][0], ddz[0][1], ddz[0][2], ddz[0][3])
+            self.forward_difference_curve(nt,
+                                          ddx[0][0], ddx[0][1], ddx[0][2], ddx[0][3],
+                                          ddy[0][0], ddy[0][1], ddy[0][2], ddy[0][3],
+                                          ddz[0][0], ddz[0][1], ddz[0][2], ddz[0][3])
             # TODO: Somar linhas de DD
         ddx = (eds * cx * edt.translate()).translate()
         ddy = (eds * cy * edt.translate()).translate()
@@ -798,12 +824,11 @@ class GraphicObject3D(GraphicObject):
         i = 1
         while (i < nt):
             i += 1
-            self.forward_difference_curve(nt, 
-                ddx[0][0], ddx[0][1], ddx[0][2], ddx[0][3], 
-                ddy[0][0], ddy[0][1], ddy[0][2], ddy[0][3],
-                ddz[0][0], ddz[0][1], ddz[0][2], ddz[0][3])
+            self.forward_difference_curve(nt,
+                                          ddx[0][0], ddx[0][1], ddx[0][2], ddx[0][3],
+                                          ddy[0][0], ddy[0][1], ddy[0][2], ddy[0][3],
+                                          ddz[0][0], ddz[0][1], ddz[0][2], ddz[0][3])
             # TODO: Somar linhas de DD
-        
 
     def forward_difference_curve(self, n, x, dx, d2x, d3x, y, dy, d2y, d3y, z, dz, d2z, d3z):
         curve_coords = []
@@ -826,5 +851,3 @@ class GraphicObject3D(GraphicObject):
 
             curve_coords.append(Coord(x, y, z))
         return curve_coords
-
-        

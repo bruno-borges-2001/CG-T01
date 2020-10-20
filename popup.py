@@ -144,9 +144,9 @@ class Object2DPopup:
         self.radio_buttons = [Radiobutton(top_container, text="Ponto",
                                           variable=self.new_object_type, value=0),
                               Radiobutton(top_container, text="Linha",
-                                          variable=self.new_object_type, value=1),
+                                                              variable=self.new_object_type, value=1),
                               Radiobutton(top_container, text="Curva (Bezier)",
-                                          variable=self.new_object_type, value=2),
+                                                              variable=self.new_object_type, value=2),
                               Radiobutton(bottom_container, text="Curva (B-Spline)",
                                           variable=self.new_object_type, value=3),
                               Radiobutton(bottom_container, text="Polígono",
@@ -287,9 +287,9 @@ class Object3DPopup:
         self.radio_buttons = [Radiobutton(top_container, text="Ponto",
                                           variable=self.new_object_type, value=0),
                               Radiobutton(top_container, text="Linha",
-                                          variable=self.new_object_type, value=1),
+                                                              variable=self.new_object_type, value=1),
                               Radiobutton(top_container, text="Curva (Bezier)",
-                                          variable=self.new_object_type, value=2),
+                                                              variable=self.new_object_type, value=2),
                               Radiobutton(bottom_container, text="Curva (B-Spline)",
                                           variable=self.new_object_type, value=3),
                               Radiobutton(bottom_container, text="Forma",
@@ -313,7 +313,7 @@ class Object3DPopup:
         edge = [coord1, coord2]
 
         if ([coord1, coord2] in self.edges or [coord2, coord1] in self.edges):
-                return
+            return
         self.edges.append(edge)
         self.edges_listbox.insert(
             END, str(self.new_object_coords[coord1]) + " -> " + str(self.new_object_coords[coord2]))
@@ -356,6 +356,7 @@ class Object3DPopup:
             if (length >= 16):
                 if (length % 16 == 0):
                     self.radio_buttons[2].configure(state=ACTIVE)
+                    self.radio_buttons[3].configure(state=ACTIVE)
 
     def destroy(self):
         self.root.destroy()
