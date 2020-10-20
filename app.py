@@ -103,16 +103,17 @@ class App:
                 self.display_file.append(new_object)
                 self.draw()
                 self.add_object_popup.destroy()
-            elif (edges != None and object_3D):
-                if (edges and len(edges) == 0 and object_type != 0):
+            else:
+                if (edges and len(edges) == 0 and object_type != 0 and typeF != "curve"):
                     return
                 new_object = GraphicObject3D(
-                    name, coords, edges, COLORS[color], False)
+                    name, coords, edges, COLORS[color], typeF)
                 self.listbox.insert(END, new_object.name)
                 self.log.insert(0, "Object " + new_object.name + " added")
                 self.display_file.append(new_object)
                 self.draw()
                 self.add_object_3D_popup.destroy()
+
 
     def check(self, event):
         self.height = self.canvas.winfo_height()
@@ -185,18 +186,13 @@ class App:
     def generate_scn_matrix(self):
         window_center = self.ref_window.return_center()
 
-        # translation_matrix = CalculationMatrix(
-        # 	't', [-(window_center.x), -(window_center.y)])
         translation_matrix = CalculationMatrix(
             't3D', [-(window_center.x), -(window_center.y), -(window_center.z)])
 
-        # rotation_matrix = CalculationMatrix('r', self.window_rotation_angle_z)
         rotation_matrix = CalculationMatrix('rx3D', self.window_rotation_angle_x) * \
             CalculationMatrix('ry3D', self.window_rotation_angle_y) * \
             CalculationMatrix('rz3D', self.window_rotation_angle_z)
 
-        # scale_matrix = CalculationMatrix(
-        # 	's', [1 / (self.get_window_width() / 2), 1 / (self.get_window_height() / 2)])
         scale_matrix = CalculationMatrix(
             's3D', [1 / (self.get_window_width() / 2), 1 / (self.get_window_height() / 2), 1])
 
@@ -212,7 +208,6 @@ class App:
             (self.window.coords3d[3].y-self.window.coords3d[0].y)**2 +
             (self.window.coords3d[3].z-self.window.coords3d[0].z)**2
         )
-        # return self.window.coords3d[2].y - self.window.coords3d[0].y
 
     def get_window_width(self):
         return sqrt(
@@ -293,18 +288,14 @@ class App:
 
     def handle_window_rotation(self, direction):
         self.window_rotation_angle_z += 15 if direction == 'right' else -15
-        # self.window.center_rotate(self.window_rotation_angle_z, 'z')
         self.log.insert(0, "Window rotated " + direction + " on axis z")
-        # self.log.insert(0, "Window rotated " + direction)
         self.draw()
 
     def window_rotation(self, direction, axis):
         if (axis == 'x'):
             self.window_rotation_angle_x += 15 if direction == 'top' else -15
-            # self.window.center_rotate(self.window_rotation_angle_x, axis)
         elif (axis == 'y'):
             self.window_rotation_angle_y += 15 if direction == 'right' else -15
-            # self.window.center_rotate(self.window_rotation_angle_y, axis)
 
         self.log.insert(0, "Window rotated " + direction + " on axis " + axis)
         self.draw()
@@ -332,7 +323,6 @@ class App:
             Cx = -self.get_window_height() * 0.1
         elif (direction == 'right'):
             Cx = self.get_window_height() * 0.1
-        # self.window.translate(Cx, Cy, 0)
         self.ref_window.translate(Cx, Cy, 0)
         self.log.insert(0, "Window moved " + direction)
         self.draw()
@@ -509,10 +499,6 @@ class App:
 
     def transform_coords(self, coords):
         aux = []
-        # min_x = min(map(lambda c: c.x, self.window.coords))
-        # min_y = min(map(lambda c: c.y, self.window.coords))
-        # max_x = max(map(lambda c: c.x, self.window.coords))
-        # max_y = max(map(lambda c: c.y, self.window.coords))
         for coord in coords:
             aux.append(self.get_viewport_coords(coord))
         return aux

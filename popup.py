@@ -351,11 +351,11 @@ class Object3DPopup:
             self.radio_buttons[4].configure(state=ACTIVE)
         elif (length >= 4):
             self.radio_buttons[1].configure(state=ACTIVE)
-            self.radio_buttons[3].configure(state=ACTIVE)
+            # self.radio_buttons[3].configure(state=ACTIVE)
             self.radio_buttons[4].configure(state=ACTIVE)
-            aux = length - 4
-            if (aux % 3 == 0):
-                self.radio_buttons[2].configure(state=ACTIVE)
+            if (length >= 16):
+                if (length % 16 == 0):
+                    self.radio_buttons[2].configure(state=ACTIVE)
 
     def destroy(self):
         self.root.destroy()
