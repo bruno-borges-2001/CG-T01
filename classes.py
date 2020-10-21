@@ -762,15 +762,6 @@ class GraphicObject3D(GraphicObject):
                     curve_coords.append(coord)
         self.coords3d = curve_coords
 
-    def get_submatrix(self, start_i, start_j, height, width):
-        aux = []
-        for i in range(start_i, start_i + height, 1):
-            for j in range(start_j, start_j + width, 1):
-                aux.append(self.matrix[i][j])
-        matrix = Matrix(height, width)
-        matrix.list_to_matrix(aux)
-        return matrix
-
     def b_spline(self):
         curve_coords = []
         mbs = CalculationMatrix('Mbs', [])
