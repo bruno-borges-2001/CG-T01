@@ -82,7 +82,7 @@ class App:
         self.add_object_3D_popup = Object3DPopup(
             self.root, self.add_object_on_screen, COLORS)
 
-    def add_object_on_screen(self, object_type, name, coords, color, edges=None, object_3D=False, dimensions=[]):
+    def add_object_on_screen(self, object_type, name, coords, color, edges=None, object_3D=False):
         if (len(name) > 0 and object_type >= 0):
             if (object_type == 2):
                 typeF = "curve"
@@ -104,10 +104,10 @@ class App:
                 self.draw()
                 self.add_object_popup.destroy()
             else:
-                if (edges and len(edges) == 0 and object_type != 0 and typeF != "curve"):
+                if (edges and len(edges) == 0 and object_type != 0 and typeF != "curve" and typeF != "b_spline_curve"):
                     return
                 new_object = GraphicObject3D(
-                    name, coords, edges, COLORS[color], typeF, dimensions)
+                    name, coords, edges, COLORS[color], typeF)
                 self.listbox.insert(END, new_object.name)
                 self.log.insert(0, "Object " + new_object.name + " added")
                 self.display_file.append(new_object)

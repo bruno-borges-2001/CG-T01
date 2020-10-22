@@ -546,17 +546,13 @@ class GraphicObject:
 
 class GraphicObject3D(GraphicObject):
 
-    def __init__(self, name, coords, edges, color, typeF=None, ready=False, dimensions=[]):
+    def __init__(self, name, coords, edges, color, typeF=None, ready=False):
         self.coords3d = coords
         self.edges = edges
         super().__init__(name, coords, color, False, typeF if typeF else '3d', ready)
 
         self.angle_x = 0
         self.angle_z = 0
-
-        # if (typeF == "b_spline_curve"):
-        #     self.mesh_height = dimensions[0]
-        #     self.mesh_width = dimensions[1]
 
         self.get_center()
 
@@ -798,11 +794,11 @@ class GraphicObject3D(GraphicObject):
                 gby = CalculationMatrix('G3D', ys)
                 gbz = CalculationMatrix('G3D', zs)
 
-                cx = mbs * gbx * mbs.translate()
-                cy = mbs * gby * mbs.translate()
-                cz = mbs * gbz * mbs.translate()
+                cx = mbs * gbx * mbs.translate_matrix()
+                cy = mbs * gby * mbs.translate_matrix()
+                cz = mbs * gbz * mbs.translate_matrix()
 
-                delta = 0.01
+                delta = 0.1
                 ns = 1 / delta
                 eds = CalculationMatrix('delta', delta)
 
@@ -815,38 +811,38 @@ class GraphicObject3D(GraphicObject):
 
     def forward_difference_surface(self, ns, nt, cx, cy, cz, eds, edt):
         curve_coords = []
-        ddx = eds * cx * edt.translate()
-        ddy = eds * cy * edt.translate()
-        ddz = eds * cz * edt.translate()
-        i = 1
-        while (i < ns):
-            i += 1
+        ddx = eds * cx * edt.translate_matrix()
+        ddy = eds * cy * edt.translate_matrix()
+        ddz = eds * cz * edt.translate_matrix()
+        iterator = 1
+        while (iterator < ns):
+            iterator += 1
             curve_coords_aux = self.forward_difference_curve(nt,
-                                          ddx[0][0], ddx[0][1], ddx[0][2], ddx[0][3],
-                                          ddy[0][0], ddy[0][1], ddy[0][2], ddy[0][3],
-                                          ddz[0][0], ddz[0][1], ddz[0][2], ddz[0][3])
+                                          ddx.matrix[0][0], ddx.matrix[0][1], ddx.matrix[0][2], ddx.matrix[0][3],
+                                          ddy.matrix[0][0], ddy.matrix[0][1], ddy.matrix[0][2], ddy.matrix[0][3],
+                                          ddz.matrix[0][0], ddz.matrix[0][1], ddz.matrix[0][2], ddz.matrix[0][3])
             curve_coords += curve_coords_aux
             for i in range(3):
                 for j in range(4):
-                    ddx[i][j] += ddx[i + 1][j]
-                    ddy[i][j] += ddy[i + 1][j]
-                    ddz[i][j] += ddz[i + 1][j]
-        ddx = (eds * cx * edt.translate()).translate()
-        ddy = (eds * cy * edt.translate()).translate()
-        ddz = (eds * cz * edt.translate()).translate()
-        i = 1
-        while (i < nt):
-            i += 1
-            curve_coords_aux = self.forward_difference_curve(nt,
-                                          ddx[0][0], ddx[0][1], ddx[0][2], ddx[0][3],
-                                          ddy[0][0], ddy[0][1], ddy[0][2], ddy[0][3],
-                                          ddz[0][0], ddz[0][1], ddz[0][2], ddz[0][3])
+                    ddx.matrix[i][j] += ddx.matrix[i + 1][j]
+                    ddy.matrix[i][j] += ddy.matrix[i + 1][j]
+                    ddz.matrix[i][j] += ddz.matrix[i + 1][j]
+        ddx = (eds * cx * edt.translate_matrix()).translate_matrix()
+        ddy = (eds * cy * edt.translate_matrix()).translate_matrix()
+        ddz = (eds * cz * edt.translate_matrix()).translate_matrix()
+        iterator = 1
+        while (iterator < nt):
+            iterator += 1
+            curve_coords_aux = self.forward_difference_curve(ns,
+                                          ddx.matrix[0][0], ddx.matrix[0][1], ddx.matrix[0][2], ddx.matrix[0][3],
+                                          ddy.matrix[0][0], ddy.matrix[0][1], ddy.matrix[0][2], ddy.matrix[0][3],
+                                          ddz.matrix[0][0], ddz.matrix[0][1], ddz.matrix[0][2], ddz.matrix[0][3])
             curve_coords += curve_coords_aux
             for i in range(3):
                 for j in range(4):
-                    ddx[i][j] += ddx[i + 1][j]
-                    ddy[i][j] += ddy[i + 1][j]
-                    ddz[i][j] += ddz[i + 1][j]
+                    ddx.matrix[i][j] += ddx.matrix[i + 1][j]
+                    ddy.matrix[i][j] += ddy.matrix[i + 1][j]
+                    ddz.matrix[i][j] += ddz.matrix[i + 1][j]
         return curve_coords
 
     def forward_difference_curve(self, n, x, dx, d2x, d3x, y, dy, d2y, d3y, z, dz, d2z, d3z):

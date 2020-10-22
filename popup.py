@@ -382,7 +382,7 @@ class Object3DPopup:
             if (len(self.edges) == 0):
                 return
         self.on_submit(self.new_object_type.get(),
-                       self.object_name.get(), self.new_object_coords, self.color_combobox.get(), self.edges, True, [self.mesh_height.get(), self.mesh_width.get()] if obj_type == 3 else [])
+                       self.object_name.get(), self.new_object_coords, self.color_combobox.get(), self.edges, True)
 
     def add_point(self):
         x = self.point_x.get()
