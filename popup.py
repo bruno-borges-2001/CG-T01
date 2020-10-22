@@ -205,7 +205,7 @@ class Object3DPopup:
     def __init__(self, parent, on_submit, colors):
         self.root = Toplevel(parent)
         self.root.title('Criar Objeto 3d')
-        self.root.geometry("600x700")
+        self.root.geometry("600x800")
 
         self.on_submit = on_submit
 
@@ -258,7 +258,7 @@ class Object3DPopup:
             rb.pack(side=LEFT)
 
             # rb.configure(state=DISABLED)
-        radio_container.pack(side=TOP)
+        radio_container.pack(side=TOP, pady=10)
 
         self.container = Frame(self.root)
         self.container.pack(fill=BOTH)
@@ -298,7 +298,7 @@ class Object3DPopup:
 
         buttons_container.pack(side=TOP)
         Button(buttons_container, text="Adicionar Ponto",
-               command=self.add_point).pack()
+               command=self.add_point).pack(pady=5)
 
         Button(buttons_container, text="Remover Ponto",
                command=self.remove_point).pack()
@@ -319,7 +319,7 @@ class Object3DPopup:
             self.new_object_listbox_2.pack(pady=5, side=LEFT)
 
             Button(buttons_container, text="Adicionar Aresta",
-                   command=self.add_edge).pack()
+                   command=self.add_edge).pack(pady=5)
 
             Button(buttons_container, text="Remover Aresta",
                    command=self.remove_edge).pack()
