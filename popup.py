@@ -382,7 +382,7 @@ class Object3DPopup:
             if (len(self.edges) == 0):
                 return
         self.on_submit(self.new_object_type.get(),
-                       self.object_name.get(), self.new_object_coords, self.color_combobox.get(), self.edges, True)
+                       self.object_name.get(), self.new_object_coords, self.color_combobox.get(), self.edges, True, [self.mesh_height.get(), self.mesh_width.get()] if obj_type == 3 else [])
 
     def add_point(self):
         x = self.point_x.get()
@@ -401,8 +401,11 @@ class Object3DPopup:
 
     def remove_point(self):
         for i in self.new_object_listbox.curselection()[::-1]:
+            self.new_object_coords.pop(i)
             self.new_object_listbox.delete(i)
             self.new_object_listbox_2.delete(i)
+
+        self.coord_counter.set(len(self.new_object_coords))
 
     def remove_edge(self):
         for i in self.edges_listbox.curselection()[::-1]:

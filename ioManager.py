@@ -1,5 +1,5 @@
 import os
-from classes import Coord, GraphicObject
+from classes import Coord, GraphicObject3D
 
 
 class IO:
@@ -49,11 +49,18 @@ class IO:
                         typef = 'polygon'
 
                     obj_coords = []
-                    for c in values[1:]:
-                        value = int(c.strip('\n'))
+                    edges = []
+                    i = 0
+                    for c in values[1:-1]:
+                        value = int(c)
                         obj_coords.append(
                             coords[value - 1 if value > 0 else value])
-                    objs.append(GraphicObject(
+                        edges.appen([i, i+1])
+                        i += 1
+                    value = int(value[-1].strip('\n'))
+                    obj_coords.append(
+                        coords[value - 1 if value > 0 else value])
+                    objs.append(GraphicObject3D(
                         name, obj_coords, color, False, typeF, True))
                     name = False
                     color = None
@@ -76,8 +83,8 @@ class IO:
         with open(self.output_path + "/output.obj", 'w') as f:
             f.write("mtllib libraries.mtl\n\n")
             for item in display_file:
-                range_start = 0 - len(item.coords)
-                for coord in item.coords:
+                range_start = 0 - len(item.coords3d)
+                for coord in item.coords3d:
                     coord_str = "v " + \
                         str(round(coord.x, 2)) + " " + \
                         str(round(coord.y, 2)) + " 0.0\n"
