@@ -1,4 +1,5 @@
 import os
+import re
 from classes import Coord, GraphicObject3D
 
 
@@ -34,37 +35,70 @@ class IO:
             name = False
             color = None
             objs = []
+            obj_coords = []
+            obj_edges = []
             while i < len(lines):
-                values = lines[i].split(' ')
+                values = list(filter(lambda x: x != '', lines[i].split(' ')))
                 if (values[0] == 'v'):
                     coords.append(
                         Coord(float(values[1]), float(values[2]), float(values[3].strip('\n'))))
                 if (values[0] == 'o'):
                     name = values[1].strip('\n')
-                if (values[0] == 'usemtl'):
-                    color = COLORS[' '.join(values[1:]).strip('\n')]
-                if (values[0] == 'p' or values[0] == 'l' or values[0] == 'f'):
-                    typeF = None
-                    if (len(values[1:]) > 2):
-                        typef = 'polygon'
+                    if (len(obj_coords) > 0):
+                        objs.append(GraphicObject3D(
+                            name, obj_coords, obj_edges, color, None, True))
+                        name = False
 
                     obj_coords = []
-                    edges = []
-                    i = 0
-                    for c in values[1:-1]:
-                        value = int(c)
-                        obj_coords.append(
-                            coords[value - 1 if value > 0 else value])
-                        edges.appen([i, i+1])
-                        i += 1
-                    value = int(value[-1].strip('\n'))
+                    obj_edges = []
+                    color = None
+                if (values[0] == 'usemtl'):
+                    color = COLORS[' '.join(values[1:]).strip('\n')]
+                if (values[0] == 'p'):
+                    value = int(values[1])
                     obj_coords.append(
                         coords[value - 1 if value > 0 else value])
-                    objs.append(GraphicObject3D(
-                        name, obj_coords, color, False, typeF, True))
-                    name = False
-                    color = None
+                if (values[0] == 'l'):
+                    value = list(map(lambda x: int(x.strip('\n')), values[1:]))
+                    edge_coords = list(
+                        map(lambda y: coords[y - 1 if y > 0 else y], value))
+                    edge_index = [len(obj_edges), len(obj_edges) + 1]
+
+                    obj_coords += edge_coords
+                    obj_edges.append(edge_index)
+                if (values[0] == 'f'):
+                    parsed = list(map(int, values[1:-1] +
+                                      [values[-1].strip('\n')] + [values[1]]))
+                    start_index = len(obj_coords)
+                    for j in range(len(values[1:])):
+                        eci = [parsed[j], parsed[j+1]]
+                        coord_values = list(
+                            map(lambda y: coords[y - 1 if y > 0 else y], eci))
+
+                        if (i == 0):
+                            obj_coords.append(coord_values[0])
+
+                        obj_coords.append(coord_values[1])
+
+                        obj_coords += coord_values
+
+                        obj_edges.append(
+                            [start_index + j, start_index + j + 1])
+
+                        # i = 0
+                        # for c in values[1:-1]:
+                        #     value = int(c)
+                        #     obj_coords.append(
+                        #         coords[value - 1 if value > 0 else value])
+                        #     edges.appen([i, i+1])
+                        #     i += 1
+                        # value = int(value[-1].strip('\n'))
+                        # obj_coords.append(
+                        #     coords[value - 1 if value > 0 else value])
                 i += 1
+            if (len(obj_coords) > 0):
+                objs.append(GraphicObject3D(
+                    name, obj_coords, obj_edges, color, None, True))
         f.close()
         return (COLORS, objs)
 
@@ -82,26 +116,26 @@ class IO:
 
         with open(self.output_path + "/output.obj", 'w') as f:
             f.write("mtllib libraries.mtl\n\n")
+            coords = []
             for item in display_file:
                 range_start = 0 - len(item.coords3d)
+                start_index = len(coords)
                 for coord in item.coords3d:
+                    coords.append(coord)
                     coord_str = "v " + \
                         str(round(coord.x, 2)) + " " + \
-                        str(round(coord.y, 2)) + " 0.0\n"
+                        str(round(coord.y, 2)) + " " + \
+                        str(round(coord.z, 2)) + "\n"
                     f.write(coord_str)
                 color_name = list(colors.keys())[list(
                     colors.values()).index(item.color)]
                 f.write("o " + item.name + "\nusemtl " + color_name + "\n")
                 if (item.type == 'point'):
-                    f.write("p -1")
-                elif (item.type == 'line' or item.type == 'curve'):
-                    string = "l " + \
-                        ' '.join(map(str, list(range(range_start, 0))))
-                    f.write(string + "\n")
-                elif (item.type == 'polygon'):
-                    string = "f " + \
-                        ' '.join(map(str, list(range(range_start, 0))))
-                    f.write(string + "\n")
+                    f.write("p -1\n")
+                else:
+                    for edge in item.edges:
+                        f.write(
+                            "l " + str(edge[0] + start_index) + " " + str(edge[1] + start_index) + '\n')
                 f.write("\n\n")
         os.chmod(self.output_path + "/output.obj", 0o777)
 

@@ -154,6 +154,8 @@ class App:
         if (not self.transformed):
             self.transformed = True
             self.ref_window.coords3d = [self.window.return_center()]
+            self.draw()
+            return
         for obj in self.display_file_show:
             for coords in obj.clipped:
                 if (len(coords) > 2):
