@@ -1,6 +1,5 @@
 from math import *
 from copy import deepcopy
-import numpy
 
 
 class Coord:
@@ -765,9 +764,7 @@ class GraphicObject3D(GraphicObject):
         self.coords3d = curve_coords
 
     def b_spline(self):
-        curve_coords = []
         mbs = CalculationMatrix('Mbs', [])
-        # size = floor(sqrt(len(self.coords3d)))
 
         matrix = [[0 for j in range(self.width)]
                   for i in range(self.height)]
@@ -789,13 +786,10 @@ class GraphicObject3D(GraphicObject):
                     matrix_4 += column
                     column = []
                 xs = [matrix_4[0 + w].x for w in range(16)]
-                # xs = numpy.transpose(xs)
 
                 ys = [matrix_4[0 + w].y for w in range(16)]
-                # ys = numpy.transpose(ys)
 
                 zs = [matrix_4[0 + w].z for w in range(16)]
-                # zs = numpy.transpose(zs)
 
                 gbx = CalculationMatrix('G3D', xs)
                 gby = CalculationMatrix('G3D', ys)
@@ -814,25 +808,21 @@ class GraphicObject3D(GraphicObject):
                 delta_t = 1 / (nt - 1)
                 edt = CalculationMatrix('delta', delta_t)
 
-                # self.curve_coords +=
                 self.forward_difference_surface(ns, nt, cx, cy, cz, eds, edt)
                 matrix_4 = []
         self.coords3d = self.curve_coords
 
     def forward_difference_surface(self, ns, nt, cx, cy, cz, eds, edt):
-        # curve_coords = []
         ddx = eds * cx * edt.translate_matrix()
         ddy = eds * cy * edt.translate_matrix()
         ddz = eds * cz * edt.translate_matrix()
         iterator = 1
         while (iterator < ns + 1):
             iterator += 1
-            # curve_coords_aux =
             self.forward_difference_curve(nt,
                                           ddx.matrix[0][0], ddx.matrix[0][1], ddx.matrix[0][2], ddx.matrix[0][3],
                                           ddy.matrix[0][0], ddy.matrix[0][1], ddy.matrix[0][2], ddy.matrix[0][3],
                                           ddz.matrix[0][0], ddz.matrix[0][1], ddz.matrix[0][2], ddz.matrix[0][3])
-            # self.curve_coords += curve_coords_aux
             for i in range(3):
                 for j in range(4):
                     ddx.matrix[i][j] += ddx.matrix[i + 1][j]
@@ -845,22 +835,18 @@ class GraphicObject3D(GraphicObject):
 
         while (iterator < nt + 1):
             iterator += 1
-            # curve_coords_aux =
             self.forward_difference_curve(ns,
                                           ddx.matrix[0][0], ddx.matrix[0][1], ddx.matrix[0][2], ddx.matrix[0][3],
                                           ddy.matrix[0][0], ddy.matrix[0][1], ddy.matrix[0][2], ddy.matrix[0][3],
                                           ddz.matrix[0][0], ddz.matrix[0][1], ddz.matrix[0][2], ddz.matrix[0][3])
-            # curve_coords += curve_coords_aux
             for i in range(3):
                 for j in range(4):
                     ddx.matrix[i][j] += ddx.matrix[i + 1][j]
                     ddy.matrix[i][j] += ddy.matrix[i + 1][j]
                     ddz.matrix[i][j] += ddz.matrix[i + 1][j]
 
-        # return curve_coords
 
     def forward_difference_curve(self, n, x, dx, d2x, d3x, y, dy, d2y, d3y, z, dz, d2z, d3z):
-        # curve_coords = []
         old = Coord(x, y, z)
         self.curve_coords.append(old)
         i = 1
@@ -883,4 +869,3 @@ class GraphicObject3D(GraphicObject):
             self.curve_coords.append(Coord(x, y, z))
             self.edges.append([index-1, index])
 
-        # return curve_coords
